@@ -1,12 +1,11 @@
 #!/bin/sh
 
-LIB_BUILDDIR=/home/mastersan/src/c/libs/bitmapset/bitmapset/build
+LIB_BUILDDIR=$PWD/build
 LIB_LDFLAGS=
 
 export prefix=${LIB_BUILDDIR}/usr
 
 LIB_CFLAGS="-g3 -O0"
-
 
 #SILENT=-s
 SILENT=
