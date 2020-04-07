@@ -1,4 +1,8 @@
-Debug
+# project
+build/
+# Eclipse
+Release/
+Debug/
 .cproject
 .project
 .settings/

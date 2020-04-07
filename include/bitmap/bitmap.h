@@ -21,7 +21,13 @@ extern "C" {
 #   define BITMAP_RESTRICT restrict
 #endif
 
-typedef uint8_t bitmap_block_type_t;
+#define BITMAP_BLOCK_TYPE(xbits)  uint  ## xbits ## _t
+typedef BITMAP_BLOCK_TYPE(64) bitmap_block_t;
+#define BITMAP_BITS_IN_BLOCK_DEFINE  64
+
+#define BITMAP_BITS_IN_BYTE()  (8)
+
+#define BITMAP_BLOCK_SIZEOF()  (BITMAP_BITS_IN_BLOCK_DEFINE / BITMAP_BITS_IN_BYTE() /* bytes */)
 
 /**
  * @brief The bitmaps relation
@@ -34,68 +40,113 @@ typedef enum
     BITMAP_RELATION__DIFFERENT     /**< Bitmaps are different */
 } bitmap_relation_t;
 
-/**
- * @brief Amount of bits in one block
- */
-#define BITMAP_BLOCK_BITSNUM() (sizeof(bitmap_block_type_t) * 8)
+typedef struct
+{
+    size_t begin;
+    size_t end;
+} bitmap_range_t;
+
+/** @brief Amount of bytes in one block */
+#define BITMAP_BYTES_IN_BLOCK()  (sizeof(bitmap_block_t))
+
+/** @brief Amount of bits in one block */
+#define BITMAP_BITS_IN_BLOCK()  (BITMAP_BYTES_IN_BLOCK() * BITMAP_BITS_IN_BYTE())
 
 /**
  * @brief Amount of significant bits on the tail. Internal use only!
  *
  * @param xbits_num    Amount of bits in bitmap
- * @return A value in range [0; BITMAP_BLOCK_BITSNUM() - 1]
+ * @return A value in range [0; BITMAP_BITS_IN_BLOCK() - 1]
  */
-#define BITMAP_INTERNAL_RESTBITS(xbits_num) ((xbits_num) % BITMAP_BLOCK_BITSNUM())
+#define BITMAP_BITS_IN_LASTBLOCK(xbits_num)  ((xbits_num) % BITMAP_BITS_IN_BLOCK())
 
 /**
  * @brief Amount of significant bits in the last block
  *
  * @param xbits_num    Amount of bits in bitmap
- * @return A value in range [1; BITMAP_BLOCK_BITSNUM()]
+ * @return A value in range [1; BITMAP_BITS_IN_BLOCK()]
  */
-#define BITMAP_LASTBLOCK_BITSNUM(xbits_num) \
-        ( { \
-            size_t tmp = BITMAP_INTERNAL_RESTBITS(xbits_num); \
-            (tmp == 0) ? BITMAP_BLOCK_BITSNUM() : tmp; \
-        } )
+#define BITMAP_BITS_IN_TAILBLOCK(xbits_num) \
+        (\
+            (xbits_num) == 0 ? 0 : \
+            ( { \
+                size_t tmp = BITMAP_BITS_IN_LASTBLOCK(xbits_num); \
+                (tmp == 0) ? BITMAP_BITS_IN_BLOCK() : tmp; \
+            } ) \
+        )
 
 /**
  * @brief Amount of blocks in bitmap
  *
  * @param xbits_num    Amount of bits in bitmap
  *
- * @return Amount of blocks
+ * @return Amount of blocks, aligned to blocksize
  */
-#define BITMAP_BLOCKS_NUM(xbits_num) \
-        ( ((xbits_num) / BITMAP_BLOCK_BITSNUM()) + ( (BITMAP_INTERNAL_RESTBITS(xbits_num) > 0) ? 1 : 0) )
+#define BITMAP_BITS_TO_BLOCKS_ALIGNED(xbits_num) \
+        ( \
+                (xbits_num) == 0 ? 0 : \
+                        ( (xbits_num) / BITMAP_BITS_IN_BLOCK() ) + ( BITMAP_BITS_IN_LASTBLOCK(xbits_num) == 0 ? 0 : 1 ) \
+        )
 
 /**
- * @brief Amount of bytes in bitmap
- *
+ * @brief Amount of bytes in bitmap aligned to blocksize
  * @param xbits_num    Amount of bits in bitmap
- *
  * @return Amount of bytes
  */
-#define BITMAP_BYTES_NUM(xbits_num) (BITMAP_BLOCKS_NUM(xbits_num) * sizeof(bitmap_block_type_t))
+#define BITMAP_BITS_TO_BYTES_ALIGNED(xbits_num) \
+        ( BITMAP_BITS_TO_BLOCKS_ALIGNED(xbits_num) * BITMAP_BYTES_IN_BLOCK() )
 
 /**
- * @brief The main patter to declare the bitmap variable
- *
+ * @brief Amount of bits in bitmap aligned to blocksize
+ * @param xbits_num    Amount of blocks in bitmap
+ * @return Amount of bits
+ */
+#define BITMAP_BLOCKS_TO_BITS_ALIGNED(xblocks_num) \
+        ((xblocks_num) * BITMAP_BITS_IN_BLOCK())
+
+/**
+ * @brief Amount of bits in bytes, aligned to byte
+ * @return Amount of bits
+ */
+#define BITMAP_BYTES_TO_BITS(xbytes_num) \
+        ((xbytes_num) * BITMAP_BITS_IN_BYTE())
+
+/**
+ * @brief The main patter to define the static or auto bitmap variable
  * @param xvarname      The variable name
  * @param xbits_num     Amount of bits in bitmap
  */
-#define BITMAP_VAR(xvarname, xbits_num) bitmap_block_type_t xvarname[BITMAP_BLOCKS_NUM(xbits_num)]
+#define BITMAP_VAR(xvarname, xbits_num)\
+    bitmap_block_t xvarname[BITMAP_BITS_TO_BLOCKS_ALIGNED(xbits_num)]
 
 /**
- * @brief Fill entire bitmap by the value
+ * @brief Fill entire bitmap by the value 1
  * @param bitmap      The bitmap
- * @param bitvalue    The value that will fill
  * @param bits_num    Amount of bits
  */
-void bitmap_bitwise_set(
-        bitmap_block_type_t * bitmap,
-        bool bitvalue,
+void bitmap_bitwise_raise1(
+        bitmap_block_t * bitmap,
         size_t bits_num
+);
+
+/**
+ * @brief Fill entire bitmap by the value 0
+ * @param bitmap      The bitmap
+ * @param bits_num    Amount of bits
+ */
+void bitmap_bitwise_clear2(
+        bitmap_block_t * bitmap,
+        size_t bits_num
+);
+
+void bitmap_bitwise_range_raise2(
+        bitmap_block_t * bitmap,
+        const bitmap_range_t * range
+);
+
+void bitmap_bitwise_range_clear2(
+        bitmap_block_t * bitmap,
+        const bitmap_range_t * range
 );
 
 /**
@@ -104,9 +155,9 @@ void bitmap_bitwise_set(
  * @param src         The source bitmap
  * @param bits_num    Amount of bits
  */
-void bitmap_bitwise_copy(
-        bitmap_block_type_t * BITMAP_RESTRICT dest,
-        const bitmap_block_type_t * BITMAP_RESTRICT src,
+void bitmap_bitwise_copy3(
+        bitmap_block_t * BITMAP_RESTRICT dest,
+        const bitmap_block_t * BITMAP_RESTRICT src,
         size_t bits_num
 );
 
@@ -117,9 +168,9 @@ void bitmap_bitwise_copy(
  * @param src         The source bitmap
  * @param bits_num    Amount of bits
  */
-void bitmap_bitwise_not2(
-        bitmap_block_type_t * BITMAP_RESTRICT dest,
-        const bitmap_block_type_t * BITMAP_RESTRICT src,
+void bitmap_bitwise_not3(
+        bitmap_block_t * BITMAP_RESTRICT dest,
+        const bitmap_block_t * BITMAP_RESTRICT src,
         size_t bits_num
 );
 
@@ -130,9 +181,9 @@ void bitmap_bitwise_not2(
  * @param src         The source bitmap
  * @param bits_num    Amount of bits
  */
-void bitmap_bitwise_or2(
-        bitmap_block_type_t * BITMAP_RESTRICT dest,
-        const bitmap_block_type_t * BITMAP_RESTRICT src,
+void bitmap_bitwise_or3(
+        bitmap_block_t * BITMAP_RESTRICT dest,
+        const bitmap_block_t * BITMAP_RESTRICT src,
         size_t bits_num
 );
 
@@ -144,10 +195,10 @@ void bitmap_bitwise_or2(
  * @param b           The second bitmap
  * @param bits_num    Amount of bits
  */
-void bitmap_bitwise_or3(
-        bitmap_block_type_t * BITMAP_RESTRICT dest,
-        const bitmap_block_type_t * BITMAP_RESTRICT a,
-        const bitmap_block_type_t * BITMAP_RESTRICT b,
+void bitmap_bitwise_or4(
+        bitmap_block_t * BITMAP_RESTRICT dest,
+        const bitmap_block_t * BITMAP_RESTRICT a,
+        const bitmap_block_t * BITMAP_RESTRICT b,
         size_t bits_num
 );
 
@@ -158,24 +209,24 @@ void bitmap_bitwise_or3(
  * @param src         The source bitmap
  * @param bits_num    Amount of bits
  */
-void bitmap_bitwise_and2(
-        bitmap_block_type_t * BITMAP_RESTRICT dest,
-        const bitmap_block_type_t * BITMAP_RESTRICT src,
+void bitmap_bitwise_and3(
+        bitmap_block_t * BITMAP_RESTRICT dest,
+        const bitmap_block_t * BITMAP_RESTRICT src,
         size_t bits_num
 );
 
 /**
- * @brief A bitwize AND, uses 3 arguments (intersection)
+ * @brief A bitwize AND, uses 4 arguments (intersection)
  * @note dest = a & b (intersection of sets)
  * @param dest        The destination bitmap
  * @param a           The first bitmap
  * @param b           The second bitmap
  * @param bits_num    Amount of bits
  */
-void bitmap_bitwise_and3(
-        bitmap_block_type_t * BITMAP_RESTRICT dest,
-        const bitmap_block_type_t * BITMAP_RESTRICT a,
-        const bitmap_block_type_t * BITMAP_RESTRICT b,
+void bitmap_bitwise_and4(
+        bitmap_block_t * BITMAP_RESTRICT dest,
+        const bitmap_block_t * BITMAP_RESTRICT a,
+        const bitmap_block_t * BITMAP_RESTRICT b,
         size_t bits_num
 );
 
@@ -186,9 +237,9 @@ void bitmap_bitwise_and3(
  * @param src         The subtractable Bitmap
  * @param bits_num    Amount of bits
  */
-void bitmap_bitwise_clear2(
-        bitmap_block_type_t * BITMAP_RESTRICT dest,
-        const bitmap_block_type_t * BITMAP_RESTRICT src,
+void bitmap_bitwise_clear3(
+        bitmap_block_t * BITMAP_RESTRICT dest,
+        const bitmap_block_t * BITMAP_RESTRICT src,
         size_t bits_num
 );
 
@@ -200,10 +251,10 @@ void bitmap_bitwise_clear2(
  * @param b           The subtractable Bitmap
  * @param bits_num    Amount of bits
  */
-void bitmap_bitwise_clear3(
-        bitmap_block_type_t * BITMAP_RESTRICT dest,
-        const bitmap_block_type_t * BITMAP_RESTRICT a,
-        const bitmap_block_type_t * BITMAP_RESTRICT b,
+void bitmap_bitwise_clear4(
+        bitmap_block_t * BITMAP_RESTRICT dest,
+        const bitmap_block_t * BITMAP_RESTRICT a,
+        const bitmap_block_t * BITMAP_RESTRICT b,
         size_t bits_num
 );
 
@@ -213,8 +264,8 @@ void bitmap_bitwise_clear3(
  * @param bits_num    Amount of bits
  * @param zero        The place to write the check result
  */
-bool bitmap_bitwise_check_zero(
-        const bitmap_block_type_t *bitmap,
+bool bitmap_bitwise_check_zero2(
+        const bitmap_block_t *bitmap,
         size_t bits_num
 );
 
@@ -225,9 +276,9 @@ bool bitmap_bitwise_check_zero(
  * @param bits_num    Amount of bits
  * @return equal?
  */
-bool bitmap_bitwise_check_equal(
-        const bitmap_block_type_t * BITMAP_RESTRICT a,
-        const bitmap_block_type_t * BITMAP_RESTRICT b,
+bool bitmap_bitwise_check_equal3(
+        const bitmap_block_t * BITMAP_RESTRICT a,
+        const bitmap_block_t * BITMAP_RESTRICT b,
         size_t bits_num
 );
 
@@ -238,9 +289,9 @@ bool bitmap_bitwise_check_equal(
  * @param bits_num    Amount of bits
  * @return inclusion?
  */
-bool bitmap_bitwise_check_inclusion(
-        const bitmap_block_type_t * BITMAP_RESTRICT a,
-        const bitmap_block_type_t * BITMAP_RESTRICT b,
+bool bitmap_bitwise_check_inclusion3(
+        const bitmap_block_t * BITMAP_RESTRICT a,
+        const bitmap_block_t * BITMAP_RESTRICT b,
         size_t bits_num
 );
 
@@ -251,9 +302,9 @@ bool bitmap_bitwise_check_inclusion(
  * @param bits_num       Amount of bits
  * @return intersection?
  */
-bool bitmap_bitwise_check_intersection(
-        const bitmap_block_type_t * BITMAP_RESTRICT a,
-        const bitmap_block_type_t * BITMAP_RESTRICT b,
+bool bitmap_bitwise_check_intersection3(
+        const bitmap_block_t * BITMAP_RESTRICT a,
+        const bitmap_block_t * BITMAP_RESTRICT b,
         size_t bits_num
 );
 
@@ -264,24 +315,30 @@ bool bitmap_bitwise_check_intersection(
  * @param bits_num    Amount of bits
  * @return relation    The place to write the check result
  */
-bitmap_relation_t bitmap_bitwise_check_relation(
-        const bitmap_block_type_t * BITMAP_RESTRICT a,
-        const bitmap_block_type_t * BITMAP_RESTRICT b,
+bitmap_relation_t bitmap_bitwise_check_relation3(
+        const bitmap_block_t * BITMAP_RESTRICT a,
+        const bitmap_block_t * BITMAP_RESTRICT b,
         size_t bits_num
 );
 
 /**
- * @brief Sets particular bit (to 1 or 0, as specified) in given bitmap.
+ * @brief Sets particular bit to 1 in given bitmap.
  * @param bitmap      The changed bitmap.
- * @param bits_num    Amount of bits in bitmap.
  * @param bit_index   The bit index in bitmap.
- * @param bitvalue    The value to set the bit (FALSE - 0, TRUE - 1).
  */
-void bitmap_bit_set(
-        bitmap_block_type_t *bitmap,
-        size_t bits_num,
-        size_t bit_index,
-        bool bitvalue
+void bitmap_bit_raise2(
+        bitmap_block_t *bitmap,
+        size_t bit_index
+);
+
+/**
+ * @brief Sets particular bit to 0 in given bitmap.
+ * @param bitmap      The changed bitmap.
+ * @param bit_index   The bit index in bitmap.
+ */
+void bitmap_bit_clear2(
+        bitmap_block_t *bitmap,
+        size_t bit_index
 );
 
 /**
@@ -291,9 +348,8 @@ void bitmap_bit_set(
  * @param bit_index   The bit index in bitmap.
  * @return bitvalue    The pointer to value to store the bit.
  */
-bool bitmap_bit_get(
-        const bitmap_block_type_t *bitmap,
-        size_t bits_num,
+bool bitmap_bit_get2(
+        const bitmap_block_t *bitmap,
         size_t bit_index
 );
 
@@ -311,8 +367,8 @@ typedef struct
  * @param bit_exists        The bit <bit_index> exists.
  * @param bit_index         The nearest current or next set bit.
  */
-void bitmap_bit_nearest_forward_raised_get(
-        const bitmap_block_type_t *bitmap,
+void bitmap_bit_nearest_forward_raised_get4(
+        const bitmap_block_t *bitmap,
         size_t bits_num,
         size_t bit_index_from,
         bitmap_bit_nearest_get_context_t * bit_nearest
@@ -329,15 +385,15 @@ typedef struct
 /**
  * @brief Iterator by bits, which has value TRUE in a bitmap.
  * @param xbit_index      Current bit, which has value TRUE (size_t *).
- * @param xbitmap         The bitmap (const bitmap_block_type_t *).
+ * @param xbitmap         The bitmap (const bitmap_block_t *).
  * @param xbits_num       Amount of bits in xbitmap (size_t).
  * @param xcontext        Iterator context (bitmap_foreach_bit_context_t *)
  */
 #define BITMAP_FOREACH_BIT_IN_BITMAP(xbit_index, xbitmap, xbits_num, xcontext) \
         for( \
-                bitmap_bit_nearest_forward_raised_get((xbitmap), (xbits_num), 0                    , &(xcontext)->bit), (*xbit_index) = (xcontext)->bit.index, (xcontext)->bit.index += 1; \
+                bitmap_bit_nearest_forward_raised_get4((xbitmap), (xbits_num), 0                    , &(xcontext)->bit), (*xbit_index) = (xcontext)->bit.index, (xcontext)->bit.index += 1; \
                 ((xcontext)->bit.exist); \
-                bitmap_bit_nearest_forward_raised_get((xbitmap), (xbits_num), (xcontext)->bit.index, &(xcontext)->bit), (*xbit_index) = (xcontext)->bit.index, (xcontext)->bit.index += 1 \
+                bitmap_bit_nearest_forward_raised_get4((xbitmap), (xbits_num), (xcontext)->bit.index, &(xcontext)->bit), (*xbit_index) = (xcontext)->bit.index, (xcontext)->bit.index += 1 \
         )
 
 /**
@@ -349,13 +405,30 @@ typedef struct
  * @param enum_marker   Marker of the enumeration: ", ".
  * @param range_marker  Marker of the range: " - ".
  */
-int bitmap_snprintf_ranged(
+int bitmap_snprintf_ranged6(
         char * BITMAP_RESTRICT dest,
         size_t size,
-        const bitmap_block_type_t * BITMAP_RESTRICT bitmap,
+        const bitmap_block_t * BITMAP_RESTRICT bitmap,
         size_t bits_num,
         const char * BITMAP_RESTRICT enum_marker,
         const char * BITMAP_RESTRICT range_marker
+);
+
+/**
+ * @brief Scan the string of ranges and append raised bits it to the bitmap
+ * @param bitmap        The source bitmap.
+ * @param bits_num      Amount of bits in source bitmap.
+ * @param enum_marker   Marker of the enumeration: ",".
+ * @param range_marker  Marker of the range: "-".
+ * @param src           Source string.
+ * @note Example: src = "0 - 5, 7"
+ */
+int bitmap_sscanf_append_ranged5(
+        bitmap_block_t * BITMAP_RESTRICT bitmap,
+        size_t bits_num,
+        char enum_marker,
+        char range_marker,
+        const char * BITMAP_RESTRICT src
 );
 
 #ifdef __cplusplus
