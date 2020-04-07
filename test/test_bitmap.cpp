@@ -14,6 +14,7 @@
 
 #define BITMAP_SIZE3 (3)
 #define BITMAP_SIZE128 (64 + 64)
+#define BITMAP_SIZE133 (64 + 64 + 5)
 #define BITMAP_SIZE64 (64)
 #define BITMAP_SIZE67 (64 + 3)
 
@@ -864,17 +865,9 @@ TEST_CASE(
         /*          xxxx xxxx xxx. .... */
         /* bitmap = 1010 1010 1011 1111 */
 
-        size_t indexes[] = { 0, 2, 4, 6, 8, 10, 66, 67 };
-        size_t indexes2[] = { 0, 2, 4, 6, 8, 10, 66, 0 };
+        static const size_t indexes[] = { 0, 2, 4, 6, 8, 10, 66 };
 
-        size_t len = ARRAY_SIZE(indexes);
-
-        size_t i;
-        for(i = 0; i < len; ++i)
-        {
-            size_t index = indexes[i];
-            bitmap_bit_raise2(bitmap67, index);
-        }
+        P_prepare_bitmap(indexes, ARRAY_SIZE(indexes), bitmap67, BITMAP_SIZE67);
 
         static const uint8_t pattern67[BITMAP_BITS_TO_BYTES_ALIGNED(BITMAP_SIZE67)] =
         {
@@ -887,13 +880,13 @@ TEST_CASE(
         bitmap_foreach_bit_context_t ctx;
 
         size_t ibit;
-        i = 0;
+        size_t i = 0;
         BITMAP_FOREACH_BIT_IN_BITMAP(&ibit, bitmap67, BITMAP_SIZE67, &ctx)
         {
-            CHECK( ibit == indexes2[i] );
+            CHECK( ibit == indexes[i] );
             ++i;
         }
-        CHECK( i == ARRAY_SIZE(indexes) - 1 );
+        CHECK( i == ARRAY_SIZE(indexes) );
     }
 
     {
@@ -905,17 +898,9 @@ TEST_CASE(
         /*          xxxx xxxx xxxx xxxx */
         /* bitmap = 1010 1010 1010 1111 */
 
-        size_t indexes[]  = { 0, 2, 4, 6, 8, 10, 12, 13, 14, 15, 127 };
-        size_t indexes2[] = { 0, 2, 4, 6, 8, 10, 12, 13, 14, 15, 127 };
+        static const size_t indexes[] = { 0, 2, 4, 6, 8, 10, 12, 13, 14, 15, 127 };
 
-        size_t len = ARRAY_SIZE(indexes);
-
-        size_t i;
-        for(i = 0; i < len; ++i)
-        {
-            size_t index = indexes[i];
-            bitmap_bit_raise2(bitmap128, index);
-        }
+        P_prepare_bitmap(indexes, ARRAY_SIZE(indexes), bitmap128, BITMAP_SIZE128);
 
         static const uint8_t pattern128[BITMAP_BITS_TO_BYTES_ALIGNED(BITMAP_SIZE67)] =
         {
@@ -928,10 +913,10 @@ TEST_CASE(
         bitmap_foreach_bit_context_t ctx;
 
         size_t ibit;
-        i = 0;
+        size_t i = 0;
         BITMAP_FOREACH_BIT_IN_BITMAP(&ibit, bitmap128, BITMAP_SIZE128, &ctx)
         {
-            CHECK( ibit == indexes2[i] );
+            CHECK( ibit == indexes[i] );
             ++i;
         }
         CHECK( i == ARRAY_SIZE(indexes) );
@@ -969,7 +954,7 @@ TEST_CASE(
 
         /*          xxxx xxxx xxx. .... */
         /* bitmap = 1010 1010 1010 0000 */
-        size_t indexes[] = { 0, 2, 4, 6, 8, 10, 66, 67 };
+        static const size_t indexes[] = { 0, 2, 4, 6, 8, 10, 66, 67 };
         static const char * str_pattern = "0, 2, 4, 6, 8, 10, 66";
 
         P_prepare_bitmap(indexes, ARRAY_SIZE(indexes), bitmap67, BITMAP_SIZE67);
@@ -984,7 +969,7 @@ TEST_CASE(
 
         /*          xxxx xxxx xxx. .... */
         /* bitmap = 0101 1011 1110 0000 */
-        size_t indexes[] = { 1, 3, 4, 6, 7, 8, 9, 10, 64, 65, 66, 67 };
+        static const size_t indexes[] = { 1, 3, 4, 6, 7, 8, 9, 10, 64, 65, 66, 67 };
         static const char * str_pattern = "1, 3, 4, 6 - 10, 64 - 66";
 
         P_prepare_bitmap(indexes, ARRAY_SIZE(indexes), bitmap67, BITMAP_SIZE67);
@@ -999,7 +984,7 @@ TEST_CASE(
 
         /*          xxxx xxxx xxx. .... */
         /* bitmap = 1111 1010 1000 0000 */
-        size_t indexes[] = { 0, 1, 2, 3, 4, 6, 8 };
+        static const size_t indexes[] = { 0, 1, 2, 3, 4, 6, 8 };
         static const char * str_pattern = "0 - 4, 6, 8";
 
         P_prepare_bitmap(indexes, ARRAY_SIZE(indexes), bitmap67, BITMAP_SIZE67);
@@ -1011,6 +996,72 @@ TEST_CASE(
     }
 
 #undef STR_SIZE
+}
+
+TEST_CASE(
+        "bitmaps bitmap_bitwise_power test",
+        "[bitmap][bitmap_bitwise_power]"
+)
+{
+    static BITMAP_VAR(bitmap67, BITMAP_SIZE67);
+
+    static const size_t indexes[] = { 0, 2, 4, 6, 8, 10, 66 };
+    P_prepare_bitmap(indexes, ARRAY_SIZE(indexes), bitmap67, BITMAP_SIZE67);
+
+    size_t size = bitmap_bitwise_power2(
+            bitmap67,
+            BITMAP_SIZE67
+    );
+
+    CHECK(size == ARRAY_SIZE(indexes));
+}
+
+TEST_CASE(
+        "bitmaps bitmap_bitwise_power6 test",
+        "[bitmap][bitmap_bitwise_power6]"
+)
+{
+    static BITMAP_VAR(bitmap67_1, BITMAP_SIZE67);
+    static BITMAP_VAR(bitmap133_2, BITMAP_SIZE133);
+
+    static const size_t indexes_a[] = { 0, 2, 4, 6, 8, 10, 66 };
+    P_prepare_bitmap(indexes_a, ARRAY_SIZE(indexes_a), bitmap67_1, BITMAP_SIZE67);
+
+    static const size_t indexes_b[] = {    2,    6,    10,     67, 120, 127, 128, 132 };
+    P_prepare_bitmap(indexes_b, ARRAY_SIZE(indexes_b), bitmap133_2, BITMAP_SIZE133);
+
+    size_t power_intersection;
+    size_t power_union;
+
+    {
+
+        bitmap_bitwise_power6(
+                bitmap67_1,
+                BITMAP_SIZE67,
+                bitmap133_2,
+                BITMAP_SIZE133,
+                &power_intersection,
+                &power_union
+        );
+
+        CHECK( power_intersection == 3);
+        CHECK( power_union == 12);
+    }
+
+    {
+        bitmap_bitwise_power6(
+                bitmap133_2,
+                BITMAP_SIZE133,
+                bitmap67_1,
+                BITMAP_SIZE67,
+                &power_intersection,
+                &power_union
+        );
+
+        CHECK( power_intersection == 3);
+        CHECK( power_union == 12);
+    }
+
 }
 
 TEST_CASE(

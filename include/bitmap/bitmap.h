@@ -15,6 +15,20 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 
+#define BITMAP_VISIBILITY_DEFAULT   __attribute__((visibility ("default")))
+#define BITMAP_VISIBILITY_HIDDEN    __attribute__((visibility ("hidden")))
+#define BITMAP_VISIBILITY_INTERNAL  __attribute__((visibility ("internal")))
+#define BITMAP_VISIBILITY_PROTECTED __attribute__((visibility ("protected")))
+
+/**
+ * BITMAP_BUILDING defined in Makefile, and mean that we build the library.
+ */
+#ifdef BITMAP_BUILDING
+#   define BITMAP_PUBLIC  BITMAP_VISIBILITY_PROTECTED
+#else
+#   define BITMAP_PUBLIC  BITMAP_VISIBILITY_DEFAULT
+#endif
+
 #ifdef __cplusplus
 #   define BITMAP_RESTRICT __restrict
 #else
@@ -127,7 +141,7 @@ typedef struct
 void bitmap_bitwise_raise1(
         bitmap_block_t * bitmap,
         size_t bits_num
-);
+) BITMAP_PUBLIC;
 
 /**
  * @brief Fill entire bitmap by the value 0
@@ -137,17 +151,17 @@ void bitmap_bitwise_raise1(
 void bitmap_bitwise_clear2(
         bitmap_block_t * bitmap,
         size_t bits_num
-);
+) BITMAP_PUBLIC;
 
 void bitmap_bitwise_range_raise2(
         bitmap_block_t * bitmap,
         const bitmap_range_t * range
-);
+) BITMAP_PUBLIC;
 
 void bitmap_bitwise_range_clear2(
         bitmap_block_t * bitmap,
         const bitmap_range_t * range
-);
+) BITMAP_PUBLIC;
 
 /**
  * @brief Copy entire bitmap
@@ -159,7 +173,7 @@ void bitmap_bitwise_copy3(
         bitmap_block_t * BITMAP_RESTRICT dest,
         const bitmap_block_t * BITMAP_RESTRICT src,
         size_t bits_num
-);
+) BITMAP_PUBLIC;
 
 /**
  * @brief A bitwize negate
@@ -172,7 +186,7 @@ void bitmap_bitwise_not3(
         bitmap_block_t * BITMAP_RESTRICT dest,
         const bitmap_block_t * BITMAP_RESTRICT src,
         size_t bits_num
-);
+) BITMAP_PUBLIC;
 
 /**
  * @brief A bitwize OR, uses 2 arguments
@@ -185,7 +199,7 @@ void bitmap_bitwise_or3(
         bitmap_block_t * BITMAP_RESTRICT dest,
         const bitmap_block_t * BITMAP_RESTRICT src,
         size_t bits_num
-);
+) BITMAP_PUBLIC;
 
 /**
  * @brief A bitwize OR, uses 3 arguments
@@ -200,7 +214,7 @@ void bitmap_bitwise_or4(
         const bitmap_block_t * BITMAP_RESTRICT a,
         const bitmap_block_t * BITMAP_RESTRICT b,
         size_t bits_num
-);
+) BITMAP_PUBLIC;
 
 /**
  * @brief A bitwize AND, uses 2 arguments (intersection)
@@ -213,7 +227,7 @@ void bitmap_bitwise_and3(
         bitmap_block_t * BITMAP_RESTRICT dest,
         const bitmap_block_t * BITMAP_RESTRICT src,
         size_t bits_num
-);
+) BITMAP_PUBLIC;
 
 /**
  * @brief A bitwize AND, uses 4 arguments (intersection)
@@ -228,7 +242,7 @@ void bitmap_bitwise_and4(
         const bitmap_block_t * BITMAP_RESTRICT a,
         const bitmap_block_t * BITMAP_RESTRICT b,
         size_t bits_num
-);
+) BITMAP_PUBLIC;
 
 /**
  * @brief Produces a bitmap subtraction using destination bitmap and source bitmap as arguments and store the result into destination bitmap.
@@ -241,7 +255,7 @@ void bitmap_bitwise_clear3(
         bitmap_block_t * BITMAP_RESTRICT dest,
         const bitmap_block_t * BITMAP_RESTRICT src,
         size_t bits_num
-);
+) BITMAP_PUBLIC;
 
 /**
  * @brief Produces a bitmap subtraction using <a> bitmap and <b> bitmap as arguments and store the result into <dest> bitmap.
@@ -256,7 +270,27 @@ void bitmap_bitwise_clear4(
         const bitmap_block_t * BITMAP_RESTRICT a,
         const bitmap_block_t * BITMAP_RESTRICT b,
         size_t bits_num
-);
+) BITMAP_PUBLIC;
+
+/**
+ * @brief Power of bitmap (amount of raised bits)
+ */
+size_t bitmap_bitwise_power2(
+        const bitmap_block_t * BITMAP_RESTRICT src,
+        size_t size
+) BITMAP_PUBLIC;
+
+/**
+ * @brief Power of union and intersection of srcA and srcB
+ */
+void bitmap_bitwise_power6(
+        const bitmap_block_t * BITMAP_RESTRICT srcA,
+        size_t sizeA,
+        const bitmap_block_t * BITMAP_RESTRICT srcB,
+        size_t sizeB,
+        size_t * BITMAP_RESTRICT power_intersection,
+        size_t * BITMAP_RESTRICT power_union
+) BITMAP_PUBLIC;
 
 /**
  * @brief Check, if all bits of bitmap is zero
@@ -265,9 +299,9 @@ void bitmap_bitwise_clear4(
  * @param zero        The place to write the check result
  */
 bool bitmap_bitwise_check_zero2(
-        const bitmap_block_t *bitmap,
+        const bitmap_block_t * bitmap,
         size_t bits_num
-);
+) BITMAP_PUBLIC;
 
 /**
  * @brief Check, if bitmaps are equal
@@ -280,7 +314,7 @@ bool bitmap_bitwise_check_equal3(
         const bitmap_block_t * BITMAP_RESTRICT a,
         const bitmap_block_t * BITMAP_RESTRICT b,
         size_t bits_num
-);
+) BITMAP_PUBLIC;
 
 /**
  * @brief Sets inclusion: Check that ALL <b> are inside <a>
@@ -293,7 +327,7 @@ bool bitmap_bitwise_check_inclusion3(
         const bitmap_block_t * BITMAP_RESTRICT a,
         const bitmap_block_t * BITMAP_RESTRICT b,
         size_t bits_num
-);
+) BITMAP_PUBLIC;
 
 /**
  * @brief Sets intersection: Check that at least one of <b> is present in <a>
@@ -306,7 +340,7 @@ bool bitmap_bitwise_check_intersection3(
         const bitmap_block_t * BITMAP_RESTRICT a,
         const bitmap_block_t * BITMAP_RESTRICT b,
         size_t bits_num
-);
+) BITMAP_PUBLIC;
 
 /**
  * @brief Check the bitmaps relation: equality, inclusion, intersection or difference
@@ -319,7 +353,7 @@ bitmap_relation_t bitmap_bitwise_check_relation3(
         const bitmap_block_t * BITMAP_RESTRICT a,
         const bitmap_block_t * BITMAP_RESTRICT b,
         size_t bits_num
-);
+) BITMAP_PUBLIC;
 
 /**
  * @brief Sets particular bit to 1 in given bitmap.
@@ -329,7 +363,7 @@ bitmap_relation_t bitmap_bitwise_check_relation3(
 void bitmap_bit_raise2(
         bitmap_block_t *bitmap,
         size_t bit_index
-);
+) BITMAP_PUBLIC;
 
 /**
  * @brief Sets particular bit to 0 in given bitmap.
@@ -339,7 +373,7 @@ void bitmap_bit_raise2(
 void bitmap_bit_clear2(
         bitmap_block_t *bitmap,
         size_t bit_index
-);
+) BITMAP_PUBLIC;
 
 /**
  * @brief Gets particular bit (to 1 or 0, as specified) from given bitmap and stores it's value in placeholder given.
@@ -351,7 +385,7 @@ void bitmap_bit_clear2(
 bool bitmap_bit_get2(
         const bitmap_block_t *bitmap,
         size_t bit_index
-);
+) BITMAP_PUBLIC;
 
 typedef struct
 {
@@ -372,7 +406,7 @@ void bitmap_bit_nearest_forward_raised_get4(
         size_t bits_num,
         size_t bit_index_from,
         bitmap_bit_nearest_get_context_t * bit_nearest
-);
+) BITMAP_PUBLIC;
 
 /**
  * @brief Type to use in BITMAP_FOREACH_BIT_IN_BITMAP
@@ -412,7 +446,7 @@ int bitmap_snprintf_ranged6(
         size_t bits_num,
         const char * BITMAP_RESTRICT enum_marker,
         const char * BITMAP_RESTRICT range_marker
-);
+) BITMAP_PUBLIC;
 
 /**
  * @brief Scan the string of ranges and append raised bits it to the bitmap
@@ -429,7 +463,7 @@ int bitmap_sscanf_append_ranged5(
         char enum_marker,
         char range_marker,
         const char * BITMAP_RESTRICT src
-);
+) BITMAP_PUBLIC;
 
 #ifdef __cplusplus
 }

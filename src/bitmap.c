@@ -7,6 +7,8 @@
 
 #include <bitmap/bitmap.h>
 
+#include "bitmap_common.h"
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <ctype.h>
@@ -14,97 +16,22 @@
 #include <unistd.h>
 #include <string.h>
 
-#define CHECK_VALID(xexpr, xres) do{ if(!(xexpr)) return xres; }while(0)
-
-/**
- * @brief Iterate over bitmap blocks
- * @param xiblock         Block index
- * @param xblocks_num     Amount of blocks
- */
-#define BITMAP_FOREACH_BLOCK(xiblock, xblocks_num) \
-        for( \
-                (xiblock) = 0; \
-                (xiblock) < (xblocks_num); \
-                ++(xiblock) \
-        )
-
-/**
- * @brief Iterate over bitmap blocks, extended version to determine the last block
- * @param xiblock         Block index
- * @param xblocks_num     Amount of blocks
- */
-#define BITMAP_FOREACH_BLOCK_EXTENDED_BEGIN(xiblock, xblocks_num) \
-        do { \
-            if(xblocks_num > 0) \
-            { \
-                size_t xxx_blocks_num_1_xxx = xblocks_num - 1; \
-                for(xiblock = 0; xiblock < xxx_blocks_num_1_xxx; ++xiblock) \
-                do
-
-/**
- * @brief Processing of last block of bitmap
- * @param xiblock         Block index
- * @param xblocks_num     Amount of blocks
- */
-#define BITMAP_FOREACH_BLOCK_EXTENDED_LASTBLOCK(xiblock, xblocks_num) \
-                while(0); \
-                if(xiblock < xblocks_num) \
-                do
-
-/**
- * @brief End of bitmap processing
- */
-#define BITMAP_FOREACH_BLOCK_EXTENDED_END() \
-                while(0); \
-            } \
-            goto bitmap_foreach_block_extended_exit; /* unused */ \
-            bitmap_foreach_block_extended_exit: ; \
-        } while(0)
-
-/**
- * @brief Break from BITMAP_FOREACH_BLOCK_EXTENDED_BEGIN() loop
- */
-#define BITMAP_FOREACH_BLOCK_EXTENDED_BREAK() \
-        do { \
-            goto bitmap_foreach_block_extended_exit; \
-        } while(0)
-
-/**
- * @brief Get bit, raised in position <xibit>
- */
-#define BITMAP_RAISED_BIT(xibit) \
-    ((bitmap_block_t)1 << (xibit))
-
 typedef struct
 {
     ssize_t begin;
     ssize_t end;
 } bitmap_srange_t;
 
-/**
- * @brief Get significant bits mask of tail block
- * @param bits_num        Amount of bits in bitmap
- * @return Bitmap block mask
- */
-static inline bitmap_block_t P_tailblock_mask(size_t bits_num)
+void bitmap_bitwise_raise1(
+        bitmap_block_t * bitmap,
+        size_t bits_num
+)
 {
     static_assert(
             sizeof(bitmap_block_t) * BITMAP_BITS_IN_BYTE() == BITMAP_BITS_IN_BLOCK_DEFINE,
             "sizeof(bitmap_block_t) * BITMAP_BITS_IN_BYTE() == BITMAP_BITS_IN_BLOCK_DEFINE"
     );
 
-    size_t significant_bits = BITMAP_BITS_IN_TAILBLOCK(bits_num);
-    /* build the bitmask */
-    return (significant_bits == BITMAP_BITS_IN_BLOCK()) ?
-            ( ~(bitmap_block_t)0 ) : /* all set to 1 */
-            ( ((bitmap_block_t)1 << significant_bits) - 1 );
-}
-
-void bitmap_bitwise_raise1(
-        bitmap_block_t * bitmap,
-        size_t bits_num
-)
-{
     memset(bitmap, -1, BITMAP_BITS_TO_BYTES_ALIGNED(bits_num));
 }
 
@@ -260,20 +187,20 @@ bool bitmap_bitwise_check_zero2(
 
     BITMAP_FOREACH_BLOCK_EXTENDED_BEGIN(iblock, blocks_num)
     {
-        bitmap_block_t item;
-        item = bitmap[iblock];
-        if(item != 0)
+        bitmap_block_t block;
+        block = bitmap[iblock];
+        if(block != 0)
         {
             return false;
         }
     }
     BITMAP_FOREACH_BLOCK_EXTENDED_LASTBLOCK(iblock, blocks_num)
     {
-        bitmap_block_t item;
-        item = bitmap[iblock];
-        bitmap_block_t tailmask = P_tailblock_mask(bits_num);
-        item &= tailmask;
-        if(item != 0)
+        bitmap_block_t block;
+        block = bitmap[iblock];
+        bitmap_block_t tailmask = bitmap_P_tailblock_mask(bits_num);
+        block &= tailmask;
+        if(block != 0)
         {
             return false;
         }
@@ -294,21 +221,21 @@ bool bitmap_bitwise_check_equal3(
 
     BITMAP_FOREACH_BLOCK_EXTENDED_BEGIN(iblock, blocks_num)
     {
-        bitmap_block_t item_a = a[iblock];
-        bitmap_block_t item_b = b[iblock];
-        if(item_a != item_b)
+        bitmap_block_t block_a = a[iblock];
+        bitmap_block_t block_b = b[iblock];
+        if(block_a != block_b)
         {
             return false;
         }
     }
     BITMAP_FOREACH_BLOCK_EXTENDED_LASTBLOCK(iblock, blocks_num)
     {
-        bitmap_block_t item_a = a[iblock];
-        bitmap_block_t item_b = b[iblock];
-        bitmap_block_t tailmask = P_tailblock_mask(bits_num);
-        item_a &= tailmask;
-        item_b &= tailmask;
-        if(item_a != item_b)
+        bitmap_block_t block_a = a[iblock];
+        bitmap_block_t block_b = b[iblock];
+        bitmap_block_t tailmask = bitmap_P_tailblock_mask(bits_num);
+        block_a &= tailmask;
+        block_b &= tailmask;
+        if(block_a != block_b)
         {
             return false;
         }
@@ -329,21 +256,21 @@ bool bitmap_bitwise_check_inclusion3(
 
     BITMAP_FOREACH_BLOCK_EXTENDED_BEGIN(iblock, blocks_num)
     {
-        bitmap_block_t item_a = a[iblock];
-        bitmap_block_t item_b = b[iblock];
-        if((item_a | item_b) != item_a)
+        bitmap_block_t block_a = a[iblock];
+        bitmap_block_t block_b = b[iblock];
+        if((block_a | block_b) != block_a)
         {
             return false;
         }
     }
     BITMAP_FOREACH_BLOCK_EXTENDED_LASTBLOCK(iblock, blocks_num)
     {
-        bitmap_block_t item_a = a[iblock];
-        bitmap_block_t item_b = b[iblock];
-        bitmap_block_t tailmask = P_tailblock_mask(bits_num);
-        item_a &= tailmask;
-        item_b &= tailmask;
-        if((item_a | item_b) != item_a)
+        bitmap_block_t block_a = a[iblock];
+        bitmap_block_t block_b = b[iblock];
+        bitmap_block_t tailmask = bitmap_P_tailblock_mask(bits_num);
+        block_a &= tailmask;
+        block_b &= tailmask;
+        if((block_a | block_b) != block_a)
         {
             return false;
         }
@@ -364,21 +291,21 @@ bool bitmap_bitwise_check_intersection3(
 
     BITMAP_FOREACH_BLOCK_EXTENDED_BEGIN(iblock, blocks_num)
     {
-        bitmap_block_t item_a = a[iblock];
-        bitmap_block_t item_b = b[iblock];
-        if((item_a & item_b) != 0)
+        bitmap_block_t block_a = a[iblock];
+        bitmap_block_t block_b = b[iblock];
+        if((block_a & block_b) != 0)
         {
             return true;
         }
     }
     BITMAP_FOREACH_BLOCK_EXTENDED_LASTBLOCK(iblock, blocks_num)
     {
-        bitmap_block_t item_a = a[iblock];
-        bitmap_block_t item_b = b[iblock];
-        bitmap_block_t tailmask = P_tailblock_mask(bits_num);
-        item_a &= tailmask;
-        item_b &= tailmask;
-        if((item_a & item_b) != 0)
+        bitmap_block_t block_a = a[iblock];
+        bitmap_block_t block_b = b[iblock];
+        bitmap_block_t tailmask = bitmap_P_tailblock_mask(bits_num);
+        block_a &= tailmask;
+        block_b &= tailmask;
+        if((block_a & block_b) != 0)
         {
             return true;
         }
@@ -402,19 +329,19 @@ bitmap_relation_t bitmap_bitwise_check_relation3(
 
     BITMAP_FOREACH_BLOCK_EXTENDED_BEGIN(iblock, blocks_num)
     {
-        bitmap_block_t item_a = a[iblock];
-        bitmap_block_t item_b = b[iblock];
-        if(item_a != item_b)
+        bitmap_block_t block_a = a[iblock];
+        bitmap_block_t block_b = b[iblock];
+        if(block_a != block_b)
         {
             equal = false;
         }
 
-        if((item_a | item_b) != item_a)
+        if((block_a | block_b) != block_a)
         {
             inclusion = false;
         }
 
-        if((item_a & item_b) != 0)
+        if((block_a & block_b) != 0)
         {
             intersection = true;
         }
@@ -431,23 +358,23 @@ bitmap_relation_t bitmap_bitwise_check_relation3(
     }
     BITMAP_FOREACH_BLOCK_EXTENDED_LASTBLOCK(iblock, blocks_num)
     {
-        bitmap_block_t item_a = a[iblock];
-        bitmap_block_t item_b = b[iblock];
-        bitmap_block_t tailmask = P_tailblock_mask(bits_num);
-        item_a &= tailmask;
-        item_b &= tailmask;
+        bitmap_block_t block_a = a[iblock];
+        bitmap_block_t block_b = b[iblock];
+        bitmap_block_t tailmask = bitmap_P_tailblock_mask(bits_num);
+        block_a &= tailmask;
+        block_b &= tailmask;
 
-        if(item_a != item_b)
+        if(block_a != block_b)
         {
             equal = false;
         }
 
-        if((item_a | item_b) != item_a)
+        if((block_a | block_b) != block_a)
         {
             inclusion = false;
         }
 
-        if((item_a & item_b) != 0)
+        if((block_a & block_b) != 0)
         {
             intersection = true;
         }
