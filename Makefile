@@ -31,6 +31,7 @@ override INTERNAL_INCLUDEDIR := ./include
 override SRCDIR       := ./src
 override SRCDIR_TEST  := ./test
 override BUILDDIR_OBJ := $(BUILDDIR)/obj
+override BUILDDIR_LIB := $(BUILDDIR)/lib
 override BUILDDIR_BIN := $(BUILDDIR)/bin
 
 override SRC := $(wildcard $(SRCDIR)/*.c)
@@ -38,8 +39,8 @@ override OBJ := $(SRC:$(SRCDIR)/%.c=$(BUILDDIR_OBJ)/%.o)
 override SRC_TEST := $(wildcard $(SRCDIR_TEST)/*.cpp)
 override OBJ_TEST := $(SRC_TEST:$(SRCDIR_TEST)/%.cpp=$(BUILDDIR_OBJ)/%.o)
 
-override OUT_STATIC := $(BUILDDIR_BIN)/$(TARGET_LIB_STATIC)
-override OUT_SHARED := $(BUILDDIR_BIN)/$(TARGET_LIB_SHARED)
+override OUT_STATIC := $(BUILDDIR_LIB)/$(TARGET_LIB_STATIC)
+override OUT_SHARED := $(BUILDDIR_LIB)/$(TARGET_LIB_SHARED)
 override OUT_TEST   := $(BUILDDIR_BIN)/$(TARGET_TEST)
 
 override INCLUDES      := -I$(INTERNAL_INCLUDEDIR) -I$(SRCDIR)
@@ -59,8 +60,8 @@ static-flags \
 shared-flags
 
 all:    static install
-static: static-flags $(BUILDDIR_OBJ) $(BUILDDIR_BIN) $(OUT_STATIC)
-shared: shared-flags $(BUILDDIR_OBJ) $(BUILDDIR_BIN) $(OUT_SHARED)
+static: static-flags $(BUILDDIR_OBJ) $(BUILDDIR_LIB) $(OUT_STATIC)
+shared: shared-flags $(BUILDDIR_OBJ) $(BUILDDIR_LIB) $(OUT_SHARED)
 test:   static $(OUT_TEST)
 
 static-flags:
@@ -74,34 +75,40 @@ $(OUT_STATIC): $(OBJ)
 $(OUT_SHARED): $(OBJ)
 	$(LD) $@ $(OBJ) -shared $(LDFLAGS)
 
-$(OUT_TEST): $(OBJ_TEST)
+$(OUT_TEST): $(BUILDDIR_BIN) $(OBJ_TEST)
 	$(LD_TEST) $@ $(OBJ_TEST) $(OBJ)
 
 $(BUILDDIR_OBJ):
+	@test -d $@ || $(MKDIR) $@
+
+$(BUILDDIR_LIB):
 	@test -d $@ || $(MKDIR) $@
 
 $(BUILDDIR_BIN):
 	@test -d $@ || $(MKDIR) $@
 
 $(OBJ): $(BUILDDIR_OBJ)/%.o : $(SRCDIR)/%.c
-	$(CC) $(INTERNAL_CFLAGS) $(INTERNAL_CFLAGS_OBJ) $(INCLUDES) $(CFLAGS) -c $< -o $@
+	$(CC) $(INTERNAL_CFLAGS)  -DBITMAP_BUILDING $(INTERNAL_CFLAGS_OBJ) $(INCLUDES) $(CFLAGS) -c $< -o $@
 $(OBJ_TEST): $(BUILDDIR_OBJ)/%.o : $(SRCDIR_TEST)/%.cpp
 	$(CXX) $(INTERNAL_CXXFLAGS) $(INCLUDES_TEST) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	-$(RM) $(OBJ)
-	-$(RM) $(OBJ_TEST)
-	-$(RMDIR) $(BUILDDIR_OBJ)
-	-$(RMDIR) $(BUILDDIR_BIN)
-	-$(RMDIR) $(BUILDDIR)
-remove:
 	-$(RM) $(OUT_STATIC)
 	-$(RM) $(OUT_SHARED)
 	-$(RM) $(OUT_TEST)
+	-$(RM) $(OBJ)
+	-$(RM) $(OBJ_TEST)
+	-$(RMDIR) $(BUILDDIR_OBJ)
+	-$(RMDIR) $(BUILDDIR_LIB)
+	-$(RMDIR) $(BUILDDIR_BIN)
+	-$(RMDIR) $(BUILDDIR)
+remove:
+	-$(RM) $(DESTDIR)$(LIBDIR)/$(TARGET_LIB_STATIC)
+	-$(RM) $(DESTDIR)$(LIBDIR)/$(TARGET_LIB_SHARED)
 	-$(RMDIR) $(BINDIR)
 
 install:
-	-install -D -m 0644 $(OUT_STATIC) $(DESTDIR)$(LIBDIR)/$(TARGET_LIB_STATIC)
+	-install -D -m 0644    $(OUT_STATIC) $(DESTDIR)$(LIBDIR)/$(TARGET_LIB_STATIC)
 	-install -D -m 0644 -s $(OUT_SHARED) $(DESTDIR)$(LIBDIR)/$(TARGET_LIB_SHARED)
 
 install-test:
