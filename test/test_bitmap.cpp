@@ -860,21 +860,8 @@ TEST_CASE(
         static BITMAP_VAR(bitmap67, BITMAP_SIZE67);
 
         /* prepare */
-        P_prepare_fill_0_trashed(bitmap67, BITMAP_SIZE67);
-
-        /*          xxxx xxxx xxx. .... */
-        /* bitmap = 1010 1010 1011 1111 */
-
         static const size_t indexes[] = { 0, 2, 4, 6, 8, 10, 66 };
-
         P_prepare_bitmap(indexes, ARRAY_SIZE(indexes), bitmap67, BITMAP_SIZE67);
-
-        static const uint8_t pattern67[BITMAP_BITS_TO_BYTES_ALIGNED(BITMAP_SIZE67)] =
-        {
-                0x55, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0xfc, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-        };
-        CHECK( memcmp(bitmap67, pattern67, sizeof(pattern67)) == 0 );
 
         /* operation */
         bitmap_foreach_bit_context_t ctx;
@@ -890,31 +877,22 @@ TEST_CASE(
     }
 
     {
-        static BITMAP_VAR(bitmap128, BITMAP_SIZE128);
+        static BITMAP_VAR(bitmap133, BITMAP_SIZE133);
 
         /* prepare */
-        bitmap_bitwise_clear2(bitmap128, BITMAP_SIZE128);
-
-        /*          xxxx xxxx xxxx xxxx */
-        /* bitmap = 1010 1010 1010 1111 */
-
-        static const size_t indexes[] = { 0, 2, 4, 6, 8, 10, 12, 13, 14, 15, 127 };
-
-        P_prepare_bitmap(indexes, ARRAY_SIZE(indexes), bitmap128, BITMAP_SIZE128);
-
-        static const uint8_t pattern128[BITMAP_BITS_TO_BYTES_ALIGNED(BITMAP_SIZE67)] =
-        {
-                0x55, 0xf5, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80,
+        static const size_t indexes[] = {
+                0, 2, 14, 15,
+                64, 66, 127,
+                128, 130, 132,
         };
-        CHECK( memcmp(bitmap128, pattern128, sizeof(pattern128)) == 0 );
+        P_prepare_bitmap(indexes, ARRAY_SIZE(indexes), bitmap133, BITMAP_SIZE133);
 
         /* operation */
         bitmap_foreach_bit_context_t ctx;
 
         size_t ibit;
         size_t i = 0;
-        BITMAP_FOREACH_BIT_IN_BITMAP(&ibit, bitmap128, BITMAP_SIZE128, &ctx)
+        BITMAP_FOREACH_BIT_IN_BITMAP(&ibit, bitmap133, BITMAP_SIZE133, &ctx)
         {
             CHECK( ibit == indexes[i] );
             ++i;
