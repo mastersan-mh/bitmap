@@ -1,11 +1,12 @@
 #!/bin/sh
 
-LIB_BUILDDIR=$PWD/debug
+LIB_BUILDDIR=$PWD/release
 LIB_LDFLAGS=
 
 export prefix=${LIB_BUILDDIR}/usr
 
-LIB_CFLAGS="-g3 -O0"
+LIB_CFLAGS="-O3 -march=native"
+#LIB_CFLAGS="-O3"
 
 #SILENT=-s
 SILENT=
