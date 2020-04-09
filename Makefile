@@ -23,8 +23,14 @@ ECHO     := echo "$(PROJNAME):"
 TARGET_LIB_STATIC ?= $(PROJNAME).a
 TARGET_LIB_SHARED ?= $(PROJNAME).so
 TARGET_TEST       ?= $(PROJNAME)-test
+VERSION_HASH      ?= $(shell git rev-parse HEAD)
+VERSION_DATETIME  ?= $(shell date "+%F %T")
 
 override INTERNAL_CFLAGS     := -std=c11 -Wall
+override INTERNAL_DEFINES    := -DBITMAP_BUILDING \
+                                -DVERSION_HASH="\"$(VERSION_HASH)\"" \
+                                -DVERSION_DATETIME="\"$(VERSION_DATETIME)\"" \
+                                -DCFLAGS="\"$(INTERNAL_CFLAGS) $(CFLAGS)\""
 override INTERNAL_CXXFLAGS   := -std=gnu++11 -Wall
 override INTERNAL_INCLUDEDIR := ./include
 
@@ -88,7 +94,7 @@ $(BUILDDIR_BIN):
 	@test -d $@ || $(MKDIR) $@
 
 $(OBJ): $(BUILDDIR_OBJ)/%.o : $(SRCDIR)/%.c
-	$(CC) $(INTERNAL_CFLAGS)  -DBITMAP_BUILDING $(INTERNAL_CFLAGS_OBJ) $(INCLUDES) $(CFLAGS) -c $< -o $@
+	$(CC) $(INTERNAL_CFLAGS) $(INTERNAL_CFLAGS_OBJ) $(INCLUDES) $(CFLAGS) $(INTERNAL_DEFINES) -c $< -o $@
 $(OBJ_TEST): $(BUILDDIR_OBJ)/%.o : $(SRCDIR_TEST)/%.cpp
 	$(CXX) $(INTERNAL_CXXFLAGS) $(INCLUDES_TEST) $(CXXFLAGS) -c $< -o $@
 

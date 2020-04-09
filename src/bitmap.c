@@ -3,8 +3,6 @@
  * @brief Implementation of the bitmap functions.
  */
 
-#include <assert.h>
-
 #include <bitmap/bitmap.h>
 
 #include "bitmap_common.h"
@@ -16,11 +14,6 @@ void bitmap_bitwise_raise1(
         size_t bits_num
 )
 {
-    static_assert(
-            sizeof(bitmap_block_t) * BITMAP_BITS_IN_BYTE() == BITMAP_BITS_IN_BLOCK_DEFINE,
-            "sizeof(bitmap_block_t) * BITMAP_BITS_IN_BYTE() == BITMAP_BITS_IN_BLOCK_DEFINE"
-    );
-
     memset(bitmap, -1, BITMAP_BITS_TO_BYTES_ALIGNED(bits_num));
 }
 

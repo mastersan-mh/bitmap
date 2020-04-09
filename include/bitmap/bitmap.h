@@ -24,7 +24,7 @@ extern "C" {
  * BITMAP_BUILDING defined in Makefile, and mean that we build the library.
  */
 #ifdef BITMAP_BUILDING
-#   define BITMAP_PUBLIC  BITMAP_VISIBILITY_PROTECTED
+#   define BITMAP_PUBLIC  BITMAP_VISIBILITY_DEFAULT
 #else
 #   define BITMAP_PUBLIC  BITMAP_VISIBILITY_DEFAULT
 #endif
@@ -132,6 +132,19 @@ typedef struct
  */
 #define BITMAP_VAR(xvarname, xbits_num)\
     bitmap_block_t xvarname[BITMAP_BITS_TO_BLOCKS_ALIGNED(xbits_num)]
+
+struct bitmap_version
+{
+    const char * hash;
+    const char * date_time;
+    const char * cflags;
+};
+
+/**
+ * @brief Get library version
+ * @param return hash and date-time of compilation
+ */
+const struct bitmap_version * bitmap_version0(void) BITMAP_PUBLIC;
 
 /**
  * @brief Fill entire bitmap by the value 1

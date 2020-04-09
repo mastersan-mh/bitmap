@@ -175,22 +175,22 @@ static inline int bitmap4096_snprintf_ranged5(
 }
 
 /**
- * @brief Type to use in BITMAP_FOREACH_BIT_IN_BITMAP
+ * @brief Type to use in BITMAP4096_FOREACH_BIT_IN_BITMAP
  */
 typedef struct
 {
-    bitmap_foreach_bit_context_t bit; /**< to more strict type */
-} bitma4096p_foreach_bit_context_t;
+    bitmap_foreach_bit_context_t bit_context; /**< to more strict type */
+} bitmap4096_foreach_bit_context_t;
 
 /**
  * @brief Iterator by bits, which has value TRUE in a bitmap.
  *
  * @param xbit_index      Current bit, which has value TRUE (size_t *).
  * @param xbitmap         The bitmap (const bitmap_block_t *).
- * @param xcontext        Iterator context (bitmap_foreach_bit_context_t *)
+ * @param xcontext        Iterator context (bitmap4096_foreach_bit_context_t *)
  */
 #define BITMAP4096_FOREACH_BIT_IN_BITMAP(xbit_index, xbitmap, xcontext) \
-         BITMAP_FOREACH_BIT_IN_BITMAP(xbit_index, xbitmap, BITMAP4096_BITS_NUM, &((xcontext)->bit))
+         BITMAP_FOREACH_BIT_IN_BITMAP(xbit_index, xbitmap, BITMAP4096_BITS_NUM, &((xcontext)->bit_context))
 
 #ifdef __cplusplus
 }
