@@ -1,11 +1,16 @@
 
 override PROJNAME := libbitmap
 
-DESTDIR  ?= /
-prefix   ?= /usr/local
-BINDIR   ?= ${prefix}/bin
-LIBDIR   ?= ${prefix}/lib
-BUILDDIR ?= ./build
+DESTDIR    ?= /
+prefix     ?= /usr/local
+BINDIR     ?= ${prefix}/bin
+LIBDIR     ?= ${prefix}/lib
+INCLUDEDIR ?= ${prefix}/include
+
+BUILDDIR ?= ./build/
+BUILDDIR_OBJ ?= $(BUILDDIR)obj
+BUILDDIR_LIB ?= $(BUILDDIR)lib
+BUILDDIR_BIN ?= $(BUILDDIR)bin
 
 CC       := $(CROSS_COMPILE)gcc
 LD       := $(CROSS_COMPILE)gcc -o
@@ -36,9 +41,6 @@ override INTERNAL_INCLUDEDIR := ./include
 
 override SRCDIR       := ./src
 override SRCDIR_TEST  := ./test
-override BUILDDIR_OBJ := $(BUILDDIR)/obj
-override BUILDDIR_LIB := $(BUILDDIR)/lib
-override BUILDDIR_BIN := $(BUILDDIR)/bin
 
 override SRC := $(wildcard $(SRCDIR)/*.c)
 override OBJ := $(SRC:$(SRCDIR)/%.c=$(BUILDDIR_OBJ)/%.o)
@@ -58,6 +60,7 @@ static \
 shared \
 test \
 clean \
+clean-obj \
 remove \
 install \
 install-test \
@@ -108,14 +111,20 @@ clean:
 	-$(RMDIR) $(BUILDDIR_LIB)
 	-$(RMDIR) $(BUILDDIR_BIN)
 	-$(RMDIR) $(BUILDDIR)
+clean-obj:
+	-$(RM) $(OBJ)
+	-$(RM) $(OBJ_TEST)
+	-$(RMDIR) $(BUILDDIR_OBJ)
 remove:
 	-$(RM) $(DESTDIR)$(LIBDIR)/$(TARGET_LIB_STATIC)
 	-$(RM) $(DESTDIR)$(LIBDIR)/$(TARGET_LIB_SHARED)
 	-$(RMDIR) $(BINDIR)
 
 install:
-	-install -D -m 0644    $(OUT_STATIC) $(DESTDIR)$(LIBDIR)/$(TARGET_LIB_STATIC)
-	-install -D -m 0644 -s $(OUT_SHARED) $(DESTDIR)$(LIBDIR)/$(TARGET_LIB_SHARED)
+	install -D -m 0644    $(OUT_STATIC) $(DESTDIR)$(LIBDIR)/$(TARGET_LIB_STATIC)
+	install -D -m 0644 -s $(OUT_SHARED) $(DESTDIR)$(LIBDIR)/$(TARGET_LIB_SHARED)
+	install -d                                          $(DESTDIR)$(INCLUDEDIR)/bitmap/
+	install    -m 0644  $(INTERNAL_INCLUDEDIR)/bitmap/* $(DESTDIR)$(INCLUDEDIR)/bitmap/
 
 install-test:
 	-install -D -m 0755 $(OUT_TEST) $(DESTDIR)/$(BINDIR)
