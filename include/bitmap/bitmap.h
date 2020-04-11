@@ -130,7 +130,7 @@ typedef struct
  * @param xvarname      The variable name
  * @param xbits_num     Amount of bits in bitmap
  */
-#define BITMAP_VAR(xvarname, xbits_num)\
+#define BITMAP_VAR(xvarname, xbits_num) \
     bitmap_block_t xvarname[BITMAP_BITS_TO_BLOCKS_ALIGNED(xbits_num)]
 
 struct bitmap_version
