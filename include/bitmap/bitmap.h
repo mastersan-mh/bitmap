@@ -20,28 +20,36 @@ extern "C" {
 #define BITMAP_VISIBILITY_INTERNAL  __attribute__((visibility ("internal")))
 #define BITMAP_VISIBILITY_PROTECTED __attribute__((visibility ("protected")))
 
-/**
- * BITMAP_BUILDING defined in Makefile, and mean that we build the library.
- */
+/** @brief BITMAP_BUILDING defined in Makefile, and mean that we build the library. */
 #ifdef BITMAP_BUILDING
 #   define BITMAP_PUBLIC  BITMAP_VISIBILITY_DEFAULT
 #else
 #   define BITMAP_PUBLIC  BITMAP_VISIBILITY_DEFAULT
 #endif
 
+/** @brief Aliasing optimization */
 #ifdef __cplusplus
 #   define BITMAP_RESTRICT __restrict
 #else
 #   define BITMAP_RESTRICT restrict
 #endif
 
-#define BITMAP_BLOCK_TYPE(xbits)  uint  ## xbits ## _t
-typedef BITMAP_BLOCK_TYPE(64) bitmap_block_t;
+/** @brief Internal use: Type of bitmap block, helper, Not to direct using */
+#define BITMAP_BLOCK_TYPE_HELPER(xbits)  uint  ## xbits ## _t
+/** @brief Internal use: Type of bitmap block */
+#define BITMAP_BLOCK_TYPE(xbits)  BITMAP_BLOCK_TYPE_HELPER(xbits)
+
+/** @brief Internal use: Amount of bits in single block */
 #define BITMAP_BITS_IN_BLOCK_DEFINE  64
 
+/** @brief Amount of bits in one byte */
 #define BITMAP_BITS_IN_BYTE()  (8)
 
+/** @brief Internal use: Size of block */
 #define BITMAP_BLOCK_SIZEOF()  (BITMAP_BITS_IN_BLOCK_DEFINE / BITMAP_BITS_IN_BYTE() /* bytes */)
+
+/** @brief The bitmap block */
+typedef BITMAP_BLOCK_TYPE(BITMAP_BITS_IN_BLOCK_DEFINE) bitmap_block_t;
 
 /**
  * @brief The bitmaps relation
@@ -271,7 +279,8 @@ void bitmap_bitwise_clear3(
 ) BITMAP_PUBLIC;
 
 /**
- * @brief Produces a bitmap subtraction using <a> bitmap and <b> bitmap as arguments and store the result into <dest> bitmap.
+ * @brief Produces a bitmap subtraction using `<a>` bitmap
+ *        and `<b>` bitmap as arguments and store the result into `<dest>` bitmap.
  * @note dest = a & (~b)
  * @param dest        The destination bitmap
  * @param a           The diminished Bitmap
