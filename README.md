@@ -1,6 +1,7 @@
-# Bitmap library
+# Bitmap library (Set of bits)
 
-The library is designed for processing bitmaps.
+The library is designed for processing bitmaps:
+raise bits, reset bits, adding, subtracting, union, intersection an many more.
 
 The library contains functions for working with entire bitmaps, or with its bits.
 
