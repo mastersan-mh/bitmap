@@ -1,7 +1,7 @@
 /**
  * @file bitmap.h
  * @brief API to process the bitmaps
- * @description API to process the bitmaps: operations on a bitmaps and matching of a bitmaps
+ * @details API to process the bitmaps: operations on a bitmaps and matching of a bitmaps
  */
 
 #ifndef INCLUDE_LIBBITMAP_H_
@@ -50,23 +50,6 @@ extern "C" {
 
 /** @brief The bitmap block */
 typedef BITMAP_BLOCK_TYPE(BITMAP_BITS_IN_BLOCK_DEFINE) bitmap_block_t;
-
-/**
- * @brief The bitmaps relation
- */
-typedef enum
-{
-    BITMAP_RELATION__EQUAL,        /**< Bitmaps are equal */
-    BITMAP_RELATION__INCLUSION,    /**< B totally included in A */
-    BITMAP_RELATION__INTERSECTION, /**< intersection B and A */
-    BITMAP_RELATION__DIFFERENT     /**< Bitmaps are different */
-} bitmap_relation_t;
-
-typedef struct
-{
-    size_t begin;
-    size_t end;
-} bitmap_range_t;
 
 /** @brief Amount of bytes in one block */
 #define BITMAP_BYTES_IN_BLOCK()  (sizeof(bitmap_block_t))
@@ -120,7 +103,7 @@ typedef struct
 
 /**
  * @brief Amount of bits in bitmap aligned to blocksize
- * @param xbits_num    Amount of blocks in bitmap
+ * @param xblocks_num       Amount of blocks in bitmap
  * @return Amount of bits
  */
 #define BITMAP_BLOCKS_TO_BITS_ALIGNED(xblocks_num) \
@@ -141,16 +124,35 @@ typedef struct
 #define BITMAP_VAR(xvarname, xbits_num) \
     bitmap_block_t xvarname[BITMAP_BITS_TO_BLOCKS_ALIGNED(xbits_num)]
 
+/** @brief Structure of bitmap library version */
 struct bitmap_version
 {
-    const char * hash;
-    const char * date_time;
-    const char * cflags;
+    const char * hash;      /**< Hash of comit */
+    const char * date_time; /**< Date and time of build */
+    const char * cflags;    /**< Compiler flags of build */
+};
+
+/**
+ * @brief The bitmaps relation
+ */
+enum bitmap_relation
+{
+    BITMAP_RELATION__EQUAL,        /**< Bitmaps are equal */
+    BITMAP_RELATION__INCLUSION,    /**< B totally included in A */
+    BITMAP_RELATION__INTERSECTION, /**< intersection B and A */
+    BITMAP_RELATION__DIFFERENT     /**< Bitmaps are different */
+};
+
+/** @brief The range */
+struct bitmap_range
+{
+    size_t begin; /**< Begin of range, can be any */
+    size_t end;   /**< End of range, can be any */
 };
 
 /**
  * @brief Get library version
- * @param return hash and date-time of compilation
+ * @return Info structure
  */
 const struct bitmap_version * bitmap_version0(void) BITMAP_PUBLIC;
 
@@ -174,14 +176,24 @@ void bitmap_bitwise_clear2(
         size_t bits_num
 ) BITMAP_PUBLIC;
 
+/**
+ * @brief Raise bits in range
+ * @param bitmap      The bitmap
+ * @param range       The range
+ */
 void bitmap_bitwise_range_raise2(
         bitmap_block_t * bitmap,
-        const bitmap_range_t * range
+        const struct bitmap_range * range
 ) BITMAP_PUBLIC;
 
+/**
+ * @brief Clear bits in range
+ * @param bitmap      The bitmap
+ * @param range       The range
+ */
 void bitmap_bitwise_range_clear2(
         bitmap_block_t * bitmap,
-        const bitmap_range_t * range
+        const struct bitmap_range * range
 ) BITMAP_PUBLIC;
 
 /**
@@ -318,7 +330,6 @@ void bitmap_bitwise_power6(
  * @brief Check, if all bits of bitmap is zero
  * @param bitmap      The bitmap
  * @param bits_num    Amount of bits
- * @param zero        The place to write the check result
  */
 bool bitmap_bitwise_check_zero2(
         const bitmap_block_t * bitmap,
@@ -339,7 +350,7 @@ bool bitmap_bitwise_check_equal3(
 ) BITMAP_PUBLIC;
 
 /**
- * @brief Sets inclusion: Check that ALL <b> are inside <a>
+ * @brief Sets inclusion: Check that ALL `<b>` are inside `<a>`
  * @param a           The first bitmap
  * @param b           The second bitmap
  * @param bits_num    Amount of bits
@@ -352,7 +363,7 @@ bool bitmap_bitwise_check_inclusion3(
 ) BITMAP_PUBLIC;
 
 /**
- * @brief Sets intersection: Check that at least one of <b> is present in <a>
+ * @brief Sets intersection: Check that at least one of `<b>` is present in `<a>`
  * @param a              The first bitmap
  * @param b              The second bitmap
  * @param bits_num       Amount of bits
@@ -371,7 +382,7 @@ bool bitmap_bitwise_check_intersection3(
  * @param bits_num    Amount of bits
  * @return relation    The place to write the check result
  */
-bitmap_relation_t bitmap_bitwise_check_relation3(
+enum bitmap_relation bitmap_bitwise_check_relation3(
         const bitmap_block_t * BITMAP_RESTRICT a,
         const bitmap_block_t * BITMAP_RESTRICT b,
         size_t bits_num
@@ -400,18 +411,18 @@ void bitmap_bit_clear2(
 /**
  * @brief Gets particular bit (to 1 or 0, as specified) from given bitmap and stores it's value in placeholder given.
  * @param bitmap      The bitmap.
- * @param bits_num    Amount of bits in bitmap.
  * @param bit_index   The bit index in bitmap.
- * @return bitvalue    The pointer to value to store the bit.
+ * @return The value of bit
  */
 bool bitmap_bit_get2(
         const bitmap_block_t *bitmap,
         size_t bit_index
 ) BITMAP_PUBLIC;
 
+/** @brief Context of iteration */
 typedef struct
 {
-    bool exist;     /**< Is the bit <bit_index> exist? */
+    bool exist;     /**< Is the bit with index `<index>` exist? */
     size_t index;   /**< The index of current bit */
 } bitmap_bit_nearest_get_context_t;
 
@@ -420,8 +431,7 @@ typedef struct
  * @param bitmap            The bitmap.
  * @param bits_num          Amount of bits in bitmap.
  * @param bit_index_from    The bit numer, from which start searching.
- * @param bit_exists        The bit <bit_index> exists.
- * @param bit_index         The nearest current or next set bit.
+ * @param bit_nearest       The nearest current or next set bit.
  */
 void bitmap_bit_nearest_forward_raised_get4(
         const bitmap_block_t *bitmap,

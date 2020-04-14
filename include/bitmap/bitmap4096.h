@@ -14,9 +14,11 @@ extern "C" {
 
 
 #define BITMAP4096_BITS_NUM 4096
+
+/** @brief Bitmap of static size 4096 bits */
 typedef struct
 {
-    BITMAP_VAR(data, BITMAP4096_BITS_NUM);
+    BITMAP_VAR(data, BITMAP4096_BITS_NUM); /**< The internal data */
 } bitmap4096_t;
 
 static inline void bitmap4096_raise1(bitmap4096_t * bitmap)
@@ -124,7 +126,7 @@ static inline bool bitmap4096_check_intersection2(
     return bitmap_bitwise_check_intersection3(bitmap1->data, bitmap2->data, BITMAP4096_BITS_NUM);
 }
 
-static inline bitmap_relation_t bitmap4096_bitwise_check_relation2(
+static inline enum bitmap_relation bitmap4096_bitwise_check_relation2(
         const bitmap4096_t * BITMAP_RESTRICT bitmap1,
         const bitmap4096_t * BITMAP_RESTRICT bitmap2
 )

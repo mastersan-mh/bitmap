@@ -85,7 +85,7 @@ static void P_prepare_fill_111000(
 #define HALF_PERIOD  (3)
     if(bits_num == 0) return;
 
-    bitmap_range_t range = {0, HALF_PERIOD};
+    struct bitmap_range range = {0, HALF_PERIOD};
     bool quit = false;
     for(;;)
     {
@@ -123,7 +123,7 @@ static void P_prepare_fill_000111(
 #define HALF_PERIOD  (3)
     if(bits_num == 0) return;
 
-    bitmap_range_t range = {0, HALF_PERIOD};
+    struct bitmap_range range = {0, HALF_PERIOD};
     bool quit = false;
     for(;;)
     {
@@ -771,7 +771,7 @@ TEST_CASE(
         bitmap_bit_raise2(bitmap_b67, 1);
         bitmap_bit_raise2(bitmap_b67, 2);
 
-        bitmap_relation_t relation;
+        enum bitmap_relation relation;
         /* operation */
         relation = bitmap_bitwise_check_relation3(bitmap_a67, bitmap_b67, BITMAP_SIZE67);
         CHECK( relation == BITMAP_RELATION__EQUAL );
@@ -795,7 +795,7 @@ TEST_CASE(
 
         bitmap_bit_raise2(bitmap_b67, 2);
 
-        bitmap_relation_t relation;
+        enum bitmap_relation relation;
         /* operation */
         relation = bitmap_bitwise_check_relation3(bitmap_a67, bitmap_b67, BITMAP_SIZE67);
         CHECK( relation == BITMAP_RELATION__INCLUSION );
@@ -820,7 +820,7 @@ TEST_CASE(
         bitmap_bit_raise2(bitmap_b67, 0);
         bitmap_bit_raise2(bitmap_b67, 2);
 
-        bitmap_relation_t relation;
+        enum bitmap_relation relation;
         /* operation */
         relation = bitmap_bitwise_check_relation3(bitmap_a67, bitmap_b67, BITMAP_SIZE67);
         CHECK( relation == BITMAP_RELATION__INTERSECTION );
@@ -844,7 +844,7 @@ TEST_CASE(
         bitmap_bit_raise2(bitmap_b67, 0);
         bitmap_bit_raise2(bitmap_b67, 3);
 
-        bitmap_relation_t relation;
+        enum bitmap_relation relation;
         /* operation */
         relation = bitmap_bitwise_check_relation3(bitmap_a67, bitmap_b67, BITMAP_SIZE67);
         CHECK( relation == BITMAP_RELATION__DIFFERENT );

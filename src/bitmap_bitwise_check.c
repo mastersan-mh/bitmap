@@ -144,7 +144,7 @@ bool bitmap_bitwise_check_intersection3(
     return false;
 }
 
-bitmap_relation_t bitmap_bitwise_check_relation3(
+enum bitmap_relation bitmap_bitwise_check_relation3(
         const bitmap_block_t * BITMAP_RESTRICT a,
         const bitmap_block_t * BITMAP_RESTRICT b,
         size_t bits_num
@@ -210,7 +210,7 @@ bitmap_relation_t bitmap_bitwise_check_relation3(
     }
     BITMAP_FOREACH_BLOCK_EXTENDED_END();
 
-    bitmap_relation_t relation =
+    enum bitmap_relation relation =
             equal ? BITMAP_RELATION__EQUAL :
                     inclusion ? BITMAP_RELATION__INCLUSION :
                             intersection ? BITMAP_RELATION__INTERSECTION :

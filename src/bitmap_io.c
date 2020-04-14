@@ -15,6 +15,7 @@
  * @brief Append formatted string to the string with size checking
  * @param[in,out] str_ptr       Pointer to string. Is modifiable! (char *)
  * @param[in,out] str_rest      Amount of rest of chars in str_ptr. Is modifiable! (ssize_t *)
+ * @param[in]     format        Format string, see `snprintf()`
  * @return length (ssize_t)
  *                  >= 0 - Written chars, except '\0';
  *                  < 0 - No free space to write the string.
@@ -45,7 +46,7 @@ static int P_snprintf_range(
         bool first,
         char ** BITMAP_RESTRICT dest,
         ssize_t * BITMAP_RESTRICT rest,
-        const bitmap_range_t * BITMAP_RESTRICT range,
+        const struct bitmap_range * BITMAP_RESTRICT range,
         const char * BITMAP_RESTRICT enum_marker,
         const char * BITMAP_RESTRICT range_marker
 )
@@ -102,7 +103,7 @@ int bitmap_snprintf_ranged6(
     }
     bits_str_ptr[0] = '\0';
 
-    bitmap_range_t range;
+    struct bitmap_range range;
     bool first_iteration = true;
     bool first_print = true;
     size_t ibit;
@@ -188,7 +189,7 @@ int bitmap_sscanf_append_ranged5(
         ST_AWAIT_MARKER,
     };
 
-    bitmap_range_t range;
+    struct bitmap_range range;
 
     enum state state = ST_DIGIT_FIRST;
 
