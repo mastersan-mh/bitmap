@@ -137,10 +137,11 @@ struct bitmap_version
  */
 enum bitmap_relation
 {
-    BITMAP_RELATION__EQUAL,        /**< Bitmaps are equal */
-    BITMAP_RELATION__INCLUSION,    /**< B totally included in A */
-    BITMAP_RELATION__INTERSECTION, /**< intersection B and A */
-    BITMAP_RELATION__DIFFERENT     /**< Bitmaps are different */
+    BITMAP_RELATION__EQUAL,             /**< Bitmaps are equal */
+    BITMAP_RELATION__INCLUSION_A_IN_B,  /**< A totally included in B */
+    BITMAP_RELATION__INCLUSION_B_IN_A,  /**< B totally included in A */
+    BITMAP_RELATION__INTERSECTION,      /**< Intersection of B and A */
+    BITMAP_RELATION__DIFFERENT          /**< Bitmaps are different */
 };
 
 /** @brief The range */

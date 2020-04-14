@@ -153,7 +153,8 @@ enum bitmap_relation bitmap_bitwise_check_relation3(
     size_t iblock;
     size_t blocks_num = BITMAP_BITS_TO_BLOCKS_ALIGNED(bits_num);
     bool equal = true; /* B == A */
-    bool inclusion = true; /* B totally included in A */
+    bool inclusion_AB = true; /* B totally included in A */
+    bool inclusion_BA = true; /* B totally included in A */
     bool intersection = false; /* intersection of B and A */
 
     BITMAP_FOREACH_BLOCK_EXTENDED_BEGIN(iblock, blocks_num)
@@ -165,9 +166,16 @@ enum bitmap_relation bitmap_bitwise_check_relation3(
             equal = false;
         }
 
-        if((block_a | block_b) != block_a)
+        bitmap_block_t union_block = block_a | block_b;
+
+        if(union_block != block_b)
         {
-            inclusion = false;
+            inclusion_AB = false;
+        }
+
+        if(union_block != block_a)
+        {
+            inclusion_BA = false;
         }
 
         if((block_a & block_b) != 0)
@@ -178,7 +186,8 @@ enum bitmap_relation bitmap_bitwise_check_relation3(
         /* The result is known, do not check next */
         if(
                 equal == false &&
-                inclusion == false &&
+                inclusion_AB == false &&
+                inclusion_BA == false &&
                 intersection == true
         )
         {
@@ -198,9 +207,16 @@ enum bitmap_relation bitmap_bitwise_check_relation3(
             equal = false;
         }
 
-        if((block_a | block_b) != block_a)
+        bitmap_block_t union_block = block_a | block_b;
+
+        if(union_block != block_b)
         {
-            inclusion = false;
+            inclusion_AB = false;
+        }
+
+        if(union_block != block_a)
+        {
+            inclusion_BA = false;
         }
 
         if((block_a & block_b) != 0)
@@ -211,10 +227,11 @@ enum bitmap_relation bitmap_bitwise_check_relation3(
     BITMAP_FOREACH_BLOCK_EXTENDED_END();
 
     enum bitmap_relation relation =
-            equal ? BITMAP_RELATION__EQUAL :
-                    inclusion ? BITMAP_RELATION__INCLUSION :
-                            intersection ? BITMAP_RELATION__INTERSECTION :
-                                    BITMAP_RELATION__DIFFERENT;
+            equal        ? BITMAP_RELATION__EQUAL :
+            inclusion_AB ? BITMAP_RELATION__INCLUSION_A_IN_B :
+            inclusion_BA ? BITMAP_RELATION__INCLUSION_B_IN_A :
+            intersection ? BITMAP_RELATION__INTERSECTION :
+                           BITMAP_RELATION__DIFFERENT;
 
     return relation;
 }

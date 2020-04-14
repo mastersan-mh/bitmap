@@ -780,7 +780,7 @@ TEST_CASE(
 
         /* operation */
         relation = bitmap_bitwise_check_relation3(bitmap_a67, bitmap_b67, BITMAP_SIZE67);
-        CHECK( relation == BITMAP_RELATION__INTERSECTION );
+        CHECK( relation == BITMAP_RELATION__INCLUSION_A_IN_B );
     }
 
     {
@@ -798,7 +798,7 @@ TEST_CASE(
         enum bitmap_relation relation;
         /* operation */
         relation = bitmap_bitwise_check_relation3(bitmap_a67, bitmap_b67, BITMAP_SIZE67);
-        CHECK( relation == BITMAP_RELATION__INCLUSION );
+        CHECK( relation == BITMAP_RELATION__INCLUSION_B_IN_A );
 
         bitmap_bit_raise2(bitmap_b67, 0);
 
@@ -829,7 +829,7 @@ TEST_CASE(
 
         /* operation */
         relation = bitmap_bitwise_check_relation3(bitmap_a67, bitmap_b67, BITMAP_SIZE67);
-        CHECK( relation == BITMAP_RELATION__INCLUSION );
+        CHECK( relation == BITMAP_RELATION__INCLUSION_B_IN_A );
     }
 
     {
