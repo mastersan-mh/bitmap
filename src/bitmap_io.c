@@ -12,21 +12,25 @@
 #include <unistd.h>
 
 /**
- * @brief Добавление форматной строки с аргументами к строке с проверкой размера
- * @param[i/o] str_ptr      Указатель на строку, к которой происходит добавление. Модифицируется! (char *)
- * @param[i/o] str_rest     Сколько свобоных символов осталось в str_ptr. Модифицируется! (ssize_t)
- * @return len              >= 0 - Записаная длина; < 0 - согласно спецификации snprintf (сколько не хватило для записи?) (ssize_t)
+ * @brief Append formatted string to the string with size checking
+ * @param[in,out] str_ptr       Pointer to string. Is modifiable! (char *)
+ * @param[in,out] str_rest      Amount of rest of chars in str_ptr. Is modifiable! (ssize_t *)
+ * @return length (ssize_t)
+ *                  >= 0 - Written chars, except '\0';
+ *                  < 0 - No free space to write the string.
+ * @note If return < 0, str_rest < 0 too.
  */
 #define STR_SNPRINTF_PUSH(str_ptr, str_rest, format, ...) \
         ({ \
-            ssize_t len = snprintf((str_ptr), (str_rest), format, ##__VA_ARGS__); \
-            if(len > 0) \
+            ssize_t _len = snprintf((str_ptr), *(str_rest), format, ##__VA_ARGS__); \
+            if(_len > 0) \
             { \
-                (str_ptr) += len; \
-                (str_rest) -= len; \
+                (str_ptr) += _len; \
+                *(str_rest) -= _len; \
             } \
-            (str_rest) < 0 ? (str_rest) : (len); \
+            (str_rest) >= 0 ? _len : -1; \
         })
+
 
 /**
  * @breif Print the single range
@@ -48,8 +52,8 @@ static int P_snprintf_range(
 {
     if(!first)
     {
-        STR_SNPRINTF_PUSH(*dest, *rest, "%s", enum_marker);
-        if((*rest) <= 0)
+        STR_SNPRINTF_PUSH(*dest, rest, "%s", enum_marker);
+        if((*rest) < 0)
         {
             return -1;
         }
@@ -57,20 +61,20 @@ static int P_snprintf_range(
 
     if(range->begin == range->end)
     {
-        STR_SNPRINTF_PUSH(*dest, *rest, "%d", (int)range->begin);
+        STR_SNPRINTF_PUSH(*dest, rest, "%d", (int)range->begin);
     }
     else
     {
         STR_SNPRINTF_PUSH(
                 *dest,
-                *rest,
+                rest,
                 "%d%s%d",
                 (int)range->begin,
                 ((range->begin + 1 == range->end) ? enum_marker : range_marker),
                 (int)range->end
         );
     }
-    if((*rest) <= 0)
+    if((*rest) < 0)
     {
         return -1;
     }
