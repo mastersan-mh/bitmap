@@ -109,36 +109,36 @@ int bitmap_snprintf_ranged6(
     bool first = true;
     bool range_interrupted = false;
 
-    ssize_t bit_prev = -1;
-    size_t bit_index;
+    ssize_t ibit_prev = -1;
+    size_t ibit;
     bitmap_foreach_bit_context_t ctx;
-    BITMAP_FOREACH_BIT_IN_BITMAP(&bit_index, bitmap, bits_num, &ctx)
+    BITMAP_FOREACH_BIT_IN_BITMAP(&ibit, bitmap, bits_num, &ctx)
     {
 
-        if(bit_prev == -1)
+        if(ibit_prev == -1)
         {
-            range.begin = bit_index;
+            range.begin = ibit;
         }
         else
         {
-            range_interrupted = (bit_prev + 1 != (ssize_t)bit_index);
+            range_interrupted = (ibit_prev + 1 != (ssize_t)ibit);
         }
 
         if(!range_interrupted)
         {
-            range.end = bit_index;
+            range.end = ibit;
         }
         else
         {
             res = P_snprintf_range(first, &bits_str_ptr, &rest, &range, enum_marker, range_marker);
             if(res) goto end;
 
-            range.begin = bit_index;
-            range.end = bit_index;
+            range.begin = ibit;
+            range.end = ibit;
             first = false;
         }
 
-        bit_prev = bit_index;
+        ibit_prev = ibit;
         ++bits_count;
     }
 
