@@ -930,6 +930,19 @@ TEST_CASE(
     {
         static BITMAP_VAR(bitmap67, BITMAP_SIZE67);
 
+        static const size_t indexes[] = { 5 };
+        static const char * str_pattern = "5";
+
+        P_prepare_bitmap(indexes, ARRAY_SIZE(indexes), bitmap67, BITMAP_SIZE67);
+
+        status = bitmap_snprintf_ranged6(str, STR_SIZE, bitmap67, BITMAP_SIZE67, enum_marker, range_marker);
+        REQUIRE( status == 0 );
+
+        CHECK( strncmp(str, str_pattern, STR_SIZE) == 0 );
+    }
+    {
+        static BITMAP_VAR(bitmap67, BITMAP_SIZE67);
+
         /*          xxxx xxxx xxx. .... */
         /* bitmap = 1010 1010 1010 0000 */
         static const size_t indexes[] = { 0, 2, 4, 6, 8, 10, 66, 67 };

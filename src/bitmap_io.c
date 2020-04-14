@@ -11,12 +11,6 @@
 #include <ctype.h>
 #include <unistd.h>
 
-typedef struct
-{
-    ssize_t begin;
-    ssize_t end;
-} bitmap_srange_t;
-
 /**
  * @brief Добавление форматной строки с аргументами к строке с проверкой размера
  * @param[i/o] str_ptr      Указатель на строку, к которой происходит добавление. Модифицируется! (char *)
@@ -47,7 +41,7 @@ static int P_snprintf_range(
         bool first,
         char ** BITMAP_RESTRICT dest,
         ssize_t * BITMAP_RESTRICT rest,
-        const bitmap_srange_t * BITMAP_RESTRICT range,
+        const bitmap_range_t * BITMAP_RESTRICT range,
         const char * BITMAP_RESTRICT enum_marker,
         const char * BITMAP_RESTRICT range_marker
 )
@@ -104,22 +98,22 @@ int bitmap_snprintf_ranged6(
     }
     bits_str_ptr[0] = '\0';
 
-    bitmap_srange_t range = {-1, -1};
+    bitmap_range_t range;
+    bool first_iteration = true;
     bool first_print = true;
-
-    size_t iteration = 0;
     size_t ibit;
     bitmap_foreach_bit_context_t ctx;
     BITMAP_FOREACH_BIT_IN_BITMAP(&ibit, bitmap, bits_num, &ctx)
     {
 
-        if(iteration == 0)
+        if(first_iteration)
         {
             range.begin = ibit;
+            first_iteration = false;
         }
         else
         {
-            bool range_interrupted = (range.end + 1 != (ssize_t)ibit);
+            bool range_interrupted = (range.end + 1 != ibit);
             if(range_interrupted)
             {
                 res = P_snprintf_range(first_print, &bits_str_ptr, &rest, &range, enum_marker, range_marker);
@@ -132,11 +126,9 @@ int bitmap_snprintf_ranged6(
         }
 
         range.end = ibit;
-
-        ++iteration;
     }
 
-    if(range.begin >= 0 && range.end >= 0)
+    if(!first_iteration)
     {
         res = P_snprintf_range(first_print, &bits_str_ptr, &rest, &range, enum_marker, range_marker);
         if(res) goto end;
