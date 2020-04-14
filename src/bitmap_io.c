@@ -106,7 +106,7 @@ int bitmap_snprintf_ranged6(
     BITMAP_FOREACH_BIT_IN_BITMAP(&ibit, bitmap, bits_num, &ctx)
     {
 
-        if(first_iteration)
+        if(unlikely(first_iteration))
         {
             range.begin = ibit;
             first_iteration = false;
@@ -136,10 +136,7 @@ int bitmap_snprintf_ranged6(
 
     end:
 
-    if(size > 0)
-    {
-        dest[size - 1] = '\0';
-    }
+    dest[size - 1] = '\0';
 
     return res;
 }
