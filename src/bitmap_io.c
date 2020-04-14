@@ -107,7 +107,6 @@ int bitmap_snprintf_ranged6(
 
     bitmap_srange_t range = {-1, -1};
     bool first = true;
-    bool range_interrupted = false;
 
     ssize_t ibit_prev = -1;
     size_t ibit;
@@ -121,22 +120,19 @@ int bitmap_snprintf_ranged6(
         }
         else
         {
-            range_interrupted = (ibit_prev + 1 != (ssize_t)ibit);
+            bool range_interrupted = (ibit_prev + 1 != (ssize_t)ibit);
+            if(range_interrupted)
+            {
+                res = P_snprintf_range(first, &bits_str_ptr, &rest, &range, enum_marker, range_marker);
+                if(res) goto end;
+
+                first = false;
+
+                range.begin = ibit;
+            }
         }
 
-        if(!range_interrupted)
-        {
-            range.end = ibit;
-        }
-        else
-        {
-            res = P_snprintf_range(first, &bits_str_ptr, &rest, &range, enum_marker, range_marker);
-            if(res) goto end;
-
-            range.begin = ibit;
-            range.end = ibit;
-            first = false;
-        }
+        range.end = ibit;
 
         ibit_prev = ibit;
         ++bits_count;
