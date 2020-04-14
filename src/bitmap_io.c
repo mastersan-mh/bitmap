@@ -93,7 +93,6 @@ int bitmap_snprintf_ranged6(
 )
 {
     int res = 0;
-    size_t bits_count;
 
     char * bits_str_ptr = dest;
     ssize_t rest = size;
@@ -106,27 +105,27 @@ int bitmap_snprintf_ranged6(
     bits_str_ptr[0] = '\0';
 
     bitmap_srange_t range = {-1, -1};
-    bool first = true;
+    bool first_print = true;
 
-    ssize_t ibit_prev = -1;
+    size_t iteration = 0;
     size_t ibit;
     bitmap_foreach_bit_context_t ctx;
     BITMAP_FOREACH_BIT_IN_BITMAP(&ibit, bitmap, bits_num, &ctx)
     {
 
-        if(ibit_prev == -1)
+        if(iteration == 0)
         {
             range.begin = ibit;
         }
         else
         {
-            bool range_interrupted = (ibit_prev + 1 != (ssize_t)ibit);
+            bool range_interrupted = (range.end + 1 != (ssize_t)ibit);
             if(range_interrupted)
             {
-                res = P_snprintf_range(first, &bits_str_ptr, &rest, &range, enum_marker, range_marker);
+                res = P_snprintf_range(first_print, &bits_str_ptr, &rest, &range, enum_marker, range_marker);
                 if(res) goto end;
 
-                first = false;
+                first_print = false;
 
                 range.begin = ibit;
             }
@@ -134,13 +133,12 @@ int bitmap_snprintf_ranged6(
 
         range.end = ibit;
 
-        ibit_prev = ibit;
-        ++bits_count;
+        ++iteration;
     }
 
     if(range.begin >= 0 && range.end >= 0)
     {
-        res = P_snprintf_range(first, &bits_str_ptr, &rest, &range, enum_marker, range_marker);
+        res = P_snprintf_range(first_print, &bits_str_ptr, &rest, &range, enum_marker, range_marker);
         if(res) goto end;
     }
 
