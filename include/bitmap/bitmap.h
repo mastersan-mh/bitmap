@@ -460,6 +460,8 @@ typedef struct
  * @param bits_num      Amount of bits in source bitmap.
  * @param enum_marker   Marker of the enumeration: ", ".
  * @param range_marker  Marker of the range: " - ".
+ * @return >= 0      OK
+ * @return <  0      The output has been cropped.
  */
 int bitmap_snprintf_ranged6(
         char * BITMAP_RESTRICT dest,

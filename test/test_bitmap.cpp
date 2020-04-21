@@ -908,16 +908,16 @@ TEST_CASE(
 )
 {
     int status;
-#define STR_SIZE 256
+#define STR_SIZE    256
+#define STR_SIZE_5  5
+#define STR_SIZE_6  6
     char str[STR_SIZE];
     static const char * enum_marker = ", ";
     static const char * range_marker = " - ";
 
-    {
-        static BITMAP_VAR(bitmap67, BITMAP_SIZE67);
+    static BITMAP_VAR(bitmap67, BITMAP_SIZE67);
 
-        /*          xxxx xxxx xxx. .... */
-        /* bitmap = 0000 0000 0000 0000 */
+    {
         static const char * str_pattern = "";
 
         P_prepare_fill_0_trashed(bitmap67, BITMAP_SIZE67);
@@ -928,10 +928,17 @@ TEST_CASE(
         CHECK( strncmp(str, str_pattern, STR_SIZE) == 0 );
     }
     {
-        static BITMAP_VAR(bitmap67, BITMAP_SIZE67);
+        static const size_t indexes[] = { 5 };
+        static const char * str_pattern = "5";
 
-        /*          xxxx xxxx xxx. .... */
-        /* bitmap = 1010 1010 1010 0000 */
+        P_prepare_bitmap(indexes, ARRAY_SIZE(indexes), bitmap67, BITMAP_SIZE67);
+
+        status = bitmap_snprintf_ranged6(str, STR_SIZE, bitmap67, BITMAP_SIZE67, enum_marker, range_marker);
+        REQUIRE( status == 0 );
+
+        CHECK( strncmp(str, str_pattern, STR_SIZE) == 0 );
+    }
+    {
         static const size_t indexes[] = { 0, 2, 4, 6, 8, 10, 66, 67 };
         static const char * str_pattern = "0, 2, 4, 6, 8, 10, 66";
 
@@ -943,10 +950,6 @@ TEST_CASE(
         CHECK( strncmp(str, str_pattern, STR_SIZE) == 0 );
     }
     {
-        static BITMAP_VAR(bitmap67, BITMAP_SIZE67);
-
-        /*          xxxx xxxx xxx. .... */
-        /* bitmap = 0101 1011 1110 0000 */
         static const size_t indexes[] = { 1, 3, 4, 6, 7, 8, 9, 10, 64, 65, 66, 67 };
         static const char * str_pattern = "1, 3, 4, 6 - 10, 64 - 66";
 
@@ -958,10 +961,6 @@ TEST_CASE(
         CHECK( strncmp(str, str_pattern, STR_SIZE) == 0 );
     }
     {
-        static BITMAP_VAR(bitmap67, BITMAP_SIZE67);
-
-        /*          xxxx xxxx xxx. .... */
-        /* bitmap = 1111 1010 1000 0000 */
         static const size_t indexes[] = { 0, 1, 2, 3, 4, 6, 8 };
         static const char * str_pattern = "0 - 4, 6, 8";
 
@@ -972,8 +971,34 @@ TEST_CASE(
 
         CHECK( strncmp(str, str_pattern, STR_SIZE) == 0 );
     }
+    {
+        /* string overflow test */
+        static const size_t indexes[] = { 0, 1, 2, 3, 4, 6, 8 };
+        static const char * str_pattern = "0 - ";
+
+        P_prepare_bitmap(indexes, ARRAY_SIZE(indexes), bitmap67, BITMAP_SIZE67);
+
+        status = bitmap_snprintf_ranged6(str, STR_SIZE_5, bitmap67, BITMAP_SIZE67, enum_marker, range_marker);
+
+        CHECK( status < 0 );
+        CHECK( strncmp(str, str_pattern, STR_SIZE_5) == 0 );
+    }
+    {
+        /* string overflow test */
+        static const size_t indexes[] = { 0, 1, 2, 3, 4, 6, 8 };
+        static const char * str_pattern = "0 - 4";
+
+        P_prepare_bitmap(indexes, ARRAY_SIZE(indexes), bitmap67, BITMAP_SIZE67);
+
+        status = bitmap_snprintf_ranged6(str, STR_SIZE_6, bitmap67, BITMAP_SIZE67, enum_marker, range_marker);
+
+        CHECK( status < 0 );
+        CHECK( strncmp(str, str_pattern, STR_SIZE_6) == 0 );
+    }
 
 #undef STR_SIZE
+#undef STR_SIZE_5
+#undef STR_SIZE_6
 }
 
 TEST_CASE(

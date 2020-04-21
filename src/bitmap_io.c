@@ -11,28 +11,26 @@
 #include <ctype.h>
 #include <unistd.h>
 
-typedef struct
-{
-    ssize_t begin;
-    ssize_t end;
-} bitmap_srange_t;
-
 /**
- * @brief Добавление форматной строки с аргументами к строке с проверкой размера
- * @param[i/o] str_ptr      Указатель на строку, к которой происходит добавление. Модифицируется! (char *)
- * @param[i/o] str_rest     Сколько свобоных символов осталось в str_ptr. Модифицируется! (ssize_t)
- * @return len              >= 0 - Записаная длина; < 0 - согласно спецификации snprintf (сколько не хватило для записи?) (ssize_t)
+ * @brief Append formatted string to the string with size checking
+ * @param[in,out] str_ptr       Pointer to string. Is modifiable! (char *)
+ * @param[in,out] str_rest      Amount of rest of chars in str_ptr. Is modifiable! (ssize_t *)
+ * @return length (ssize_t)
+ *                  >= 0 - Written chars, except '\0';
+ *                  < 0 - No free space to write the string.
+ * @note If return < 0, str_rest < 0 too.
  */
 #define STR_SNPRINTF_PUSH(str_ptr, str_rest, format, ...) \
         ({ \
-            ssize_t len = snprintf((str_ptr), (str_rest), format, ##__VA_ARGS__); \
-            if(len > 0) \
+            ssize_t _len = snprintf((str_ptr), *(str_rest), format, ##__VA_ARGS__); \
+            if(_len > 0) \
             { \
-                (str_ptr) += len; \
-                (str_rest) -= len; \
+                (str_ptr) += _len; \
+                *(str_rest) -= _len; \
             } \
-            (str_rest) < 0 ? (str_rest) : (len); \
+            (str_rest) >= 0 ? _len : -1; \
         })
+
 
 /**
  * @breif Print the single range
@@ -47,15 +45,15 @@ static int P_snprintf_range(
         bool first,
         char ** BITMAP_RESTRICT dest,
         ssize_t * BITMAP_RESTRICT rest,
-        const bitmap_srange_t * BITMAP_RESTRICT range,
+        const bitmap_range_t * BITMAP_RESTRICT range,
         const char * BITMAP_RESTRICT enum_marker,
         const char * BITMAP_RESTRICT range_marker
 )
 {
     if(!first)
     {
-        STR_SNPRINTF_PUSH(*dest, *rest, "%s", enum_marker);
-        if((*rest) <= 0)
+        STR_SNPRINTF_PUSH(*dest, rest, "%s", enum_marker);
+        if((*rest) < 0)
         {
             return -1;
         }
@@ -63,20 +61,20 @@ static int P_snprintf_range(
 
     if(range->begin == range->end)
     {
-        STR_SNPRINTF_PUSH(*dest, *rest, "%d", (int)range->begin);
+        STR_SNPRINTF_PUSH(*dest, rest, "%d", (int)range->begin);
     }
     else
     {
         STR_SNPRINTF_PUSH(
                 *dest,
-                *rest,
+                rest,
                 "%d%s%d",
                 (int)range->begin,
                 ((range->begin + 1 == range->end) ? enum_marker : range_marker),
                 (int)range->end
         );
     }
-    if((*rest) <= 0)
+    if((*rest) < 0)
     {
         return -1;
     }
@@ -93,7 +91,6 @@ int bitmap_snprintf_ranged6(
 )
 {
     int res = 0;
-    size_t bits_count;
 
     char * bits_str_ptr = dest;
     ssize_t rest = size;
@@ -105,55 +102,45 @@ int bitmap_snprintf_ranged6(
     }
     bits_str_ptr[0] = '\0';
 
-    bitmap_srange_t range = {-1, -1};
-    bool first = true;
-    bool range_interrupted = false;
-
-    ssize_t bit_prev = -1;
-    size_t bit_index;
+    bitmap_range_t range;
+    bool first_iteration = true;
+    bool first_print = true;
+    size_t ibit;
     bitmap_foreach_bit_context_t ctx;
-    BITMAP_FOREACH_BIT_IN_BITMAP(&bit_index, bitmap, bits_num, &ctx)
+    BITMAP_FOREACH_BIT_IN_BITMAP(&ibit, bitmap, bits_num, &ctx)
     {
 
-        if(bit_prev == -1)
+        if(unlikely(first_iteration))
         {
-            range.begin = bit_index;
+            range.begin = ibit;
+            first_iteration = false;
         }
         else
         {
-            range_interrupted = (bit_prev + 1 != (ssize_t)bit_index);
+            bool range_interrupted = (range.end + 1 != ibit);
+            if(range_interrupted)
+            {
+                res = P_snprintf_range(first_print, &bits_str_ptr, &rest, &range, enum_marker, range_marker);
+                if(res) goto end;
+
+                first_print = false;
+
+                range.begin = ibit;
+            }
         }
 
-        if(!range_interrupted)
-        {
-            range.end = bit_index;
-        }
-        else
-        {
-            res = P_snprintf_range(first, &bits_str_ptr, &rest, &range, enum_marker, range_marker);
-            if(res) goto end;
-
-            range.begin = bit_index;
-            range.end = bit_index;
-            first = false;
-        }
-
-        bit_prev = bit_index;
-        ++bits_count;
+        range.end = ibit;
     }
 
-    if(range.begin >= 0 && range.end >= 0)
+    if(!first_iteration)
     {
-        res = P_snprintf_range(first, &bits_str_ptr, &rest, &range, enum_marker, range_marker);
+        res = P_snprintf_range(first_print, &bits_str_ptr, &rest, &range, enum_marker, range_marker);
         if(res) goto end;
     }
 
     end:
 
-    if(size > 0)
-    {
-        dest[size - 1] = '\0';
-    }
+    dest[size - 1] = '\0';
 
     return res;
 }
