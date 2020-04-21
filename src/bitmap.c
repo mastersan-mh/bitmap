@@ -27,7 +27,7 @@ void bitmap_bitwise_clear2(
 
 void bitmap_bitwise_range_raise2(
         bitmap_block_t * bitmap,
-        const bitmap_range_t * range
+        const struct bitmap_range * range
 )
 {
     size_t i;
@@ -39,7 +39,7 @@ void bitmap_bitwise_range_raise2(
 
 void bitmap_bitwise_range_clear2(
         bitmap_block_t * bitmap,
-        const bitmap_range_t * range
+        const struct bitmap_range * range
 )
 {
     size_t i;

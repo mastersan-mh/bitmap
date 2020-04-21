@@ -69,10 +69,11 @@
         } while(0)
 
 /**
- * @brief Get bit, raised in position <xibit>
+ * @brief Get bit, raised in position `<xibit>`
+ * @param xibit     Bit position in block
  */
 #define BITMAP_RAISED_BIT(xibit) \
-    ((bitmap_block_t)1 << (xibit))
+        ((bitmap_block_t)1 << (xibit))
 
 /**
  * @brief Get significant bits mask of tail block
